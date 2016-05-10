@@ -1,6 +1,7 @@
 package texasholdem.gamestate;
 
 import java.io.Serializable;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.Scanner;
 
@@ -16,6 +17,12 @@ public class Player implements Serializable {
    private int amountOfMoney;
    Scanner sc = new Scanner(System.in);
    private long id;
+
+   /**
+    * The player's IP address and port number; used for unicast packets directed
+    * to the player
+    */
+   private SocketAddress address;
 
 
    public boolean[] play; // 0- check, 1-raise, 2- fold 3- call
@@ -142,7 +149,8 @@ public class Player implements Serializable {
 
    @Override
    public String toString() {
-      return "Player{" + "isOp=" + isOp + ", username=" + username + ", amountOfMoney=" + amountOfMoney + '}';
+      return "Player{" + "isOp=" + isOp + ", username=" + username +
+            ", amountOfMoney=" + amountOfMoney + '}';
    }
 
    /**
@@ -151,5 +159,30 @@ public class Player implements Serializable {
     */
    public long getId() {
       return id;
+   }
+
+   /**
+    * Determines whether two players are in fact the same player.
+    * @param other The other player
+    * @return true iff the other player's id is the same as this player's
+    */
+   public boolean equals(Player other) {
+      return id == other.getId();
+   }
+
+   /**
+    * Sets the player's address
+    * @param address The new address
+    */
+   public void setAddress(SocketAddress address) {
+      this.address = address;
+   }
+
+   /**
+    * Returns the player's address
+    * @return The player's address
+    */
+   public SocketAddress getAddress() {
+      return address;
    }
 }

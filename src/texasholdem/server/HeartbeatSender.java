@@ -26,13 +26,20 @@ public class HeartbeatSender extends Thread implements TexasHoldemConstants {
    private volatile boolean cancel;
 
    /**
+    * The server's id
+    */
+   private final long id;
+
+   /**
     * Constructs server multicast heartbeat sender.
     * @param group The multicast group address
     * @param socket The socket over which to send the heartbeat
+    * @param id The server's id
     */
-   HeartbeatSender(SocketAddress group, DatagramSocket socket) {
+   HeartbeatSender(SocketAddress group, DatagramSocket socket, long id) {
       this.group = group;
       this.socket = socket;
+      this.id = id;
       cancel = false;
    }
 
@@ -43,7 +50,7 @@ public class HeartbeatSender extends Thread implements TexasHoldemConstants {
    public void run() {
       DatagramPacket hbPacket = null;
       try {
-         byte[] hbBytes = SharedUtilities.toByteArray(new Heartbeat());
+         byte[] hbBytes = SharedUtilities.toByteArray(new Heartbeat(id));
          hbPacket = new DatagramPacket(hbBytes, hbBytes.length, group);
       }
       catch(IOException ioe) {

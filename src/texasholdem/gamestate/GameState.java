@@ -5,37 +5,62 @@
  */
 package texasholdem.gamestate;
 
-import java.util.List;
+import java.io.Serializable;
+import java.util.ArrayList;
+import texasholdem.TexasHoldemConstants;
 
 /**
  *
  * @author al3x901
  */
-public class GameState {
+public class GameState implements Serializable, TexasHoldemConstants {
 
-   private Player currentPlayer; // WHOSE TURN IS IT?
-   // needed because when same gs object is
-   // sent to all players, players need to be individually updated.
-   private List<Player> players;
-   private int sequenceNumber;
-   private List<Card> tableCards;
+   /**
+    * The player whose turn it is. Needed because when same gs object is sent to
+    * all players, players need to be individually updated.
+    */
+   private Player currentPlayer;
+
+   /**
+    * List of all players in the game
+    */
+   private ArrayList<Player> players;
+
+   /**
+    * Sequence number for the game state
+    */
+   private volatile int sequenceNumber;
+   private ArrayList<Card> tableCards;
    private int pot = 0;
    private int numberOfturnsLeft;
    private int handsDealt = 0;
    private String message;
-   private int MODE; // what mode is the server in
 
-   public int getMODE() {
-      return MODE;
+   /**
+    * The game's current mode
+    */
+   private int mode;
+
+   /**
+    * The sender's id
+    */
+   private long sender;
+
+   public int getMode() {
+      return mode;
    }
 
-   public void setMODE(int MODE) {
-      this.MODE = MODE;
+   public void setMode(int mode) {
+      this.mode = mode;
    }
 
-
+   /**
+    * Constructs a new game state using the specified player as the OP.
+    */
    public GameState(){
-
+      players = new ArrayList<>(MAX_PLAYERS);
+      sequenceNumber = 0;
+      mode = WAITING_MODE;
    }
 
    public String getMessage() {
@@ -66,7 +91,7 @@ public class GameState {
       return currentPlayer;
    }
 
-   public List<Card> getTableCards() {
+   public ArrayList<Card> getTableCards() {
       return tableCards;
    }
 
@@ -79,7 +104,7 @@ public class GameState {
    }
 
 
-   public void setTableCards(List<Card> tableCards) {
+   public void setTableCards(ArrayList<Card> tableCards) {
       this.tableCards = tableCards;
    }
 
@@ -87,17 +112,19 @@ public class GameState {
       this.pot = pot;
    }
 
-   public List<Player> getPlayers() {
+   public ArrayList<Player> getPlayers() {
       return players;
    }
 
-   public void setPlayers(List<Player> players) {
+   public void setPlayers(ArrayList<Player> players) {
       this.players = players;
    }
 
    @Override
    public String toString() {
-      return "GameState{" + "currentPlayer=" + currentPlayer + ", players=" + players.size() + ", tableCards=" + tableCards.size() + ", pot=" + pot + ", numberOfturnsLeft=" + numberOfturnsLeft + '}';
+      return "GameState{" + "currentPlayer=" + currentPlayer + ", players=" +
+            players.size() + ", tableCards=" + tableCards.size() + ", pot=" +
+            pot + ", numberOfturnsLeft=" + numberOfturnsLeft + '}';
    }
 
    /**
@@ -108,4 +135,51 @@ public class GameState {
       return sequenceNumber;
    }
 
+   /**
+    * Sets the sender's id.
+    * @param sender The sender's id
+    */
+   public void setSender(long sender) {
+      this.sender = sender;
+   }
+
+   /**
+    * Returns the id of the sender of the gamestate.
+    * @return The sender's id
+    */
+   public long getSender() {
+      return sender;
+   }
+
+   /**
+    * Increments the sequence number.
+    */
+   public void incrementSequenceNumber() {
+      sequenceNumber++;
+   }
+
+   /**
+    * Attempts to add the specified player to the game. Returns true if the
+    * player has been added, false otherwise.
+    * @param p The player to be added
+    * @return true iff the player is successfully added
+    */
+   public boolean addPlayer(Player p) {
+      if(players.contains(p) || isFull()) {
+         return false;
+      }
+      if(players.isEmpty()) {
+         p.setAsOp();
+      }
+      players.add(p);
+      return true;
+   }
+
+   /**
+    * Returns true if the list of players has reached its maximum size.
+    * @return true if the list of players has reached its maximum size
+    */
+   public boolean isFull() {
+      return players.size() == MAX_PLAYERS;
+   }
 }

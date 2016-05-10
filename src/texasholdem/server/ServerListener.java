@@ -10,6 +10,8 @@ import java.net.DatagramSocket;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import texasholdem.gamestate.Player;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
@@ -81,6 +83,9 @@ public class ServerListener extends Thread implements TexasHoldemConstants {
             schedule(sender);
          }
          else {
+            if(obj instanceof Player) {
+               ((Player)obj).setAddress(packet.getSocketAddress());
+            }
             server.receiveObject(obj);
          }
       }

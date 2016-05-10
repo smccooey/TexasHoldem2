@@ -21,14 +21,6 @@ public class Heartbeat implements Serializable {
    }
 
    /**
-    * Constructs a heartbeat from the server. This heartbeat uses a dummy
-    * sender id.
-    */
-   public Heartbeat() {
-      sender = 0;
-   }
-
-   /**
     * Returns the sender's id.
     * @return The sender's id
     */
