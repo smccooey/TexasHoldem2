@@ -1,28 +1,34 @@
 package texasholdem.client;
 
 import texasholdem.Ack;
+import texasholdem.Rejection;
 import texasholdem.SharedUtilities;
+import texasholdem.TexasHoldemConstants;
 import texasholdem.gamestate.GameState;
 import texasholdem.gamestate.Player;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.util.Queue;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * GameClient. Includes a separate listener thread to receive incoming
  * packets and forward them to this class. Note that all wait/notify calls
  * for this package should be synchronized on this client object.
  */
-public class GameClient implements ClientConstants {
+public class GameClient implements ClientState, TexasHoldemConstants {
 
    /**
     * Separate thread to listen for incoming packets
@@ -57,21 +63,19 @@ public class GameClient implements ClientConstants {
    /**
     * Reads user input
     */
-   private Scanner in;
+   private final Scanner in;
 
    /**
     * Schedules timeout tasks
     */
-   ScheduledThreadPoolExecutor scheduler;
-
-   ScheduledFuture<?> future;
+   private final ScheduledThreadPoolExecutor scheduler;
 
    /**
-    * true if there is a new gamestate object that has not yet been handled
+    * The current future which checks for pending ACKs
     */
-   private final AtomicBoolean gameStateUpdated;
+   private ScheduledFuture<?> future;
 
-   /**
+    /**
     * The player's name
     */
    private String name;
@@ -85,6 +89,16 @@ public class GameClient implements ClientConstants {
     * true if the client's participation in the game has been canceled
     */
    private volatile boolean cancel;
+
+   /**
+    * Queue of objects which have been received but not yet handled
+    */
+   private Queue<Object> received;
+
+   /**
+    * Sequence number of the gamestate for which an ACK is expected
+    */
+   private volatile int expectedAck;
 
    /**
     * Constructs a client in the Texas Hold 'em game.
@@ -111,8 +125,8 @@ public class GameClient implements ClientConstants {
 
       // Create the player object
       try {
-         player = new Player(name, SharedUtilities.bytesToLong(
-               socket.getNetworkInterface().getHardwareAddress()));
+         player = new Player(name, SharedUtilities.bytesToLong(socket.getNetworkInterface().
+               getHardwareAddress()));
       }
       catch(SocketException se) {
          se.printStackTrace();
@@ -120,15 +134,15 @@ public class GameClient implements ClientConstants {
       }
 
       state = JOINING;
-      scheduler = new ScheduledThreadPoolExecutor(1);
+      scheduler = new ScheduledThreadPoolExecutor(2);
       // Attempt to join the game
       joinGame();
-
-      gameStateUpdated = new AtomicBoolean(false);
 
       // Set up listener for incoming packets
       listener = new ClientListener(this, socket, server);
       listener.start();
+
+      received = new ConcurrentLinkedQueue<>();
 
       cancel = false;
 
@@ -141,54 +155,79 @@ public class GameClient implements ClientConstants {
     */
    private void doStuff() {
       while(!cancel) {
-         if(gameStateUpdated.get()) {
-            if(gameStateUpdated.compareAndSet(true, false)) {
+         if(!received.isEmpty()) {
+            Object obj = received.poll();
+            if(obj != null) {
+               // The new gamestate SHOULD contain this client's player,
+               // confirming that the player has joined the game.
                if(state == JOINING) {
-                  // The new gamestate SHOULD contain this client's player,
-                  // confirming that the player has joined the game.
-                  if(state == JOINING) {
-                     if(gameState.getPlayers().contains(player)) {
-                        // Player has now joined the game
-                        state = JOINED;
-                        System.out.println("Players in game:");
-                        for(Player p : gameState.getPlayers()) {
-                           System.out.println("   " + p.getUsername());
+                  if(obj instanceof GameState) {
+                     GameState newGameState = (GameState)obj;
+                     // First acknowledge receipt
+                     send(new Ack(newGameState.getSequenceNumber(), getId()), 1);
+
+                     // Further processing only needed if this is a new gamestate
+                     if(newGameState.getSequenceNumber() > gameState.getSequenceNumber()) {
+                        // Update gamestate field and let main thread handle it
+                        gameState = newGameState;
+                        if(gameState.getPlayers().contains(player)) {
+                           // Player has now joined the game
+                           state = JOINED;
+                           System.out.println("Players in game:");
+                           for(Player p : gameState.getPlayers()) {
+                              System.out.println("   " + p.getUsername());
+                           }
+                           System.out.println();
                         }
-                        System.out.println();
                      }
                      else {
                         // Player not in game. Resend player object
                         joinGame();
                      }
                   }
-                  else if(state == JOINED) {
-                     // Player is waiting for game to start
-                     System.out.println("Players in game:");
-                     for(Player p : gameState.getPlayers()) {
-                        System.out.println("   " + p.getUsername());
-                     }
-                     System.out.println();
+                  else if(obj instanceof Rejection) {
+                     Rejection rejection = (Rejection)obj;
+                     assert rejection.getId() == getId();
+                     System.out.println("Could not join game.\n" + rejection.getMessage());
+                     state = IDLE;
                   }
-                  else if(state == IN_GAME) {
-
+                  else if(obj instanceof Ack) {
+                     Ack ack = (Ack)obj;
+                     if(ack.getSequenceNumber() == expectedAck && future != null) {
+                        future.cancel(true);
+                     }
                   }
                }
-            }
-            else {
-               // Pretty sure this should never happen, but just in case...
-               throw new RuntimeException("Unexpected false value for " +
-                     "gameStateUpdated.");
+               else if(state == JOINED) {
+                  // Player is waiting for game to start
+                  System.out.println("Players in game:");
+                  for(Player p : gameState.getPlayers()) {
+                     System.out.println("   " + p.getUsername());
+                  }
+                  System.out.println();
+               }
+               else if(state == IN_GAME) {
+
+               }
+               else if(state == IDLE) {
+
+               }
             }
          }
-         try {
-            // Take a nap
-            synchronized(this) {
-               wait();
-            }
+         else {
+            // Pretty sure this should never happen, but just in case...
+            throw new RuntimeException("Unexpected false value for " +
+                  "gameStateUpdated.");
          }
-         catch(InterruptedException ie) {
-            // Do nothing
+      }
+      try {
+         // Take a nap
+         synchronized(this) {
+            wait();
          }
+      }
+      catch(InterruptedException ie) {
+         // Do nothing
       }
    }
 
@@ -202,11 +241,12 @@ public class GameClient implements ClientConstants {
          throw new NullPointerException("Null received by " +
                "GameClient.receiveObject.");
       }
+      received.add(obj);
+/*
       else if(obj instanceof GameState) {
          GameState newGameState = (GameState)obj;
          // First acknowledge receipt
-         Ack ack = new Ack(newGameState.getSequenceNumber(),
-               getId());
+         Ack ack = new Ack(newGameState.getSequenceNumber(), getId());
          try {
             byte[] ackBytes = SharedUtilities.toByteArray(ack);
             socket.send(new DatagramPacket(ackBytes, ackBytes.length, server));
@@ -226,6 +266,7 @@ public class GameClient implements ClientConstants {
          throw new RuntimeException("Unexpected object " +
                obj.getClass().getName() + " received.");
       }
+*/
       // Wake up the client if it is napping.
       synchronized(this) {
          notifyAll();
@@ -252,31 +293,17 @@ public class GameClient implements ClientConstants {
     * Attempts to join the game by sending a Player object to the server.
     */
    private void joinGame() {
-      try {
-         byte[] playerBytes = SharedUtilities.toByteArray(player);
-         DatagramPacket packet = new DatagramPacket(playerBytes,
-               playerBytes.length, server);
-         for(int attempts = 0; state == JOINING && attempts < 5; attempts++) {
-            socket.send(packet);
-            try {
-               synchronized(this) {
-                  wait(DROP_TIMEOUT);
-               }
-            }
-            catch(InterruptedException ie) {
-               continue;
-            }
+      send(player, 5);
+      // Schedule a task to wait a little while, then check to see if player has joined the game
+      scheduler.schedule(() -> {
+         if(state == JOINING) {
+            System.out.print("Failed to join game.");
+            state = IDLE;
          }
-      }
-      catch(IOException ioe) {
-         ioe.printStackTrace();
-      }
-
-      if(state == JOINING) {
-         // Five attempts have failed. Give up.
-         System.out.print("Failed to join game.");
-         state = IDLE;
-      }
+         synchronized(this) {
+            notifyAll();
+         }
+      }, DROP_TIMEOUT * 2, MILLISECONDS);
    }
 
    /**
@@ -288,11 +315,36 @@ public class GameClient implements ClientConstants {
    }
 
    /**
-    * Invoked when the client detects that it has been disconnected from the
-    * server. This occurs when the client has not detected a heartbeat from
-    * the server for a period of five heartbeat intervals.
+    * Invoked when the client detects that it has been disconnected from the server. This occurs
+    * when the client has not detected a heartbeat from the server for a period of five heartbeat
+    * intervals.
     */
    void drop() {
       // ????
+   }
+
+   /**
+    * Sends a serializable object to the server. This will only attempt to send the object the
+    * number of times specified by the tries parameter.
+    * @param ser The object to be sent
+    * @param tries remaining number of tries
+    */
+   void send(Serializable ser, int tries) {
+      if(ser instanceof GameState) {
+         if(future != null) {
+            future.cancel(true);
+         }
+         expectedAck = ((GameState)ser).getSequenceNumber();
+      }
+      if(tries > 0) {
+         future = scheduler.schedule(() -> send(ser, tries - 1), ACK_TIMEOUT, MILLISECONDS);
+      }
+      try {
+         byte[] bytes = SharedUtilities.toByteArray(ser);
+         socket.send(new DatagramPacket(bytes, bytes.length, server));
+      }
+      catch(IOException ioe) {
+         ioe.printStackTrace();
+      }
    }
 }

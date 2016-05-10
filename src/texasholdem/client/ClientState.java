@@ -1,11 +1,9 @@
 package texasholdem.client;
 
-import texasholdem.TexasHoldemConstants;
-
 /**
- * Constants used by the client
+ * State values for the client
  */
-interface ClientConstants extends TexasHoldemConstants {
+interface ClientState {
 
    /**
     * State value when the player is attempting to join a game
@@ -24,7 +22,7 @@ interface ClientConstants extends TexasHoldemConstants {
    int IN_GAME = 2;
 
    /**
-    * State value when the player is not in a game or attempting to join one
+    * State value when the player has not in a game or attempting to joing one
     */
    int IDLE = 3;
 }

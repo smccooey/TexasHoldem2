@@ -26,9 +26,9 @@ public interface TexasHoldemConstants {
    int MAX_PACKET_SIZE = 1500;
 
    /**
-    * Interval for sending heartbeats to server
+    * Interval for sending heartbeats to clients
     */
-   int HEARTBEAT_INTERVAL = 1000;
+   int HEARTBEAT_INTERVAL = 500;
 
    /**
     * Maximum number of players
@@ -39,6 +39,11 @@ public interface TexasHoldemConstants {
     * Timeout before the client assumes that the server is no longer connected
     */
    int DROP_TIMEOUT = 5 * HEARTBEAT_INTERVAL;
+
+   /**
+    * Timeout for an expected ACK
+    */
+   int ACK_TIMEOUT = 2 * HEARTBEAT_INTERVAL;
 
    /*
     * Game modes

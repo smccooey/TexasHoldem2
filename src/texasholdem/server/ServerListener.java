@@ -3,6 +3,7 @@ package texasholdem.server;
 import texasholdem.Heartbeat;
 import texasholdem.SharedUtilities;
 import texasholdem.TexasHoldemConstants;
+import texasholdem.gamestate.Player;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -10,16 +11,8 @@ import java.net.DatagramSocket;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import texasholdem.gamestate.Player;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
-
-/*
- * Not sure how we want to store all of the players' id. Either in
- * an array or and array list, and then to keep track of when they
- * all last responded to the heartbeat.
- */
 
 public class ServerListener extends Thread implements TexasHoldemConstants {
 
@@ -60,6 +53,9 @@ public class ServerListener extends Thread implements TexasHoldemConstants {
       scheduler = new ScheduledThreadPoolExecutor(MAX_PLAYERS);
    }
 
+   /**
+    * Listens for incoming packets and forwards them to the server.
+    */
    @Override
    public void run() {
       DatagramPacket packet = new DatagramPacket(new byte[MAX_PACKET_SIZE],
@@ -92,17 +88,17 @@ public class ServerListener extends Thread implements TexasHoldemConstants {
    }
 
    /**
-    * Schedules a task to drop the player. If there is already a scheduled
-    * task to drop the player, that task is canceled.
+    * Schedules a task to drop the player. If there is already a scheduled task to drop the player,
+    * that task is canceled.
     * @param id The id of the player to be dropped
     */
    private void schedule(long id) {
       ScheduledFuture<?> future = heartbeatTimeouts.get(id);
       if(future != null) {
-         future.cancel(false);
+         future.cancel(true);
       }
-      heartbeatTimeouts.put(id, scheduler.schedule(() -> server.dropPlayer(id),
-            DROP_TIMEOUT, MILLISECONDS));
+      heartbeatTimeouts.put(id, scheduler.schedule(() -> server.dropPlayer(id), DROP_TIMEOUT,
+            MILLISECONDS));
    }
 
    /**
@@ -111,5 +107,17 @@ public class ServerListener extends Thread implements TexasHoldemConstants {
    void cancel() {
       scheduler.shutdown();
       cancel = true;
+   }
+
+   /**
+    * Removes any heartbeat timeout check for the specified player, removing them from the game as
+    * far as the listener is concerned.
+    * @param id The id of the player to be removed
+    */
+   void dropPlayer(long id) {
+      ScheduledFuture<?> future = heartbeatTimeouts.remove(id);
+      if(future != null) {
+         future.cancel(true);
+      }
    }
 }
