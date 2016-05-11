@@ -5,11 +5,11 @@
  */
 package texasholdem.server;
 
-import csc445.Serializer;
+import texasholdem.SharedUtilities;
+import texasholdem.gamestate.GameState;
 import texasholdem.gamestate.Player;
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,14 +24,15 @@ public class ServerGameRunner {
    private ServerGameLogic game;
    private GameState gameState;
 
-   public ServerGameRunner() {
+   /**
+    * Constructs a game runner.
+    * @param gameState The gamestate
+    */
+   public ServerGameRunner(GameState gameState) {
       // TODO code application logic here
+      this.gameState = gameState;
       game = new ServerGameLogic();
-      gameState = new GameState();
-      Player homer = new Player("homer");
-      Player flanders = new Player("flanders");
-      Player andres = new Player("andres");
-      game.newGame(homer, flanders, andres);
+      game.newGame(gameState.getPlayers());
       play();
    }
 
@@ -86,9 +87,9 @@ public class ServerGameRunner {
          }
 
       }
-      Serializer s = new Serializer();
+
       try {
-         System.out.println(s.serialize(gameState).length);
+         System.out.println(SharedUtilities.toByteArray(gameState).length);
          //TODO: USGS = update and send gameStateObject
          // We have to wait for all players to say what they want to do.
 

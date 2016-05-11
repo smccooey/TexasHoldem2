@@ -7,7 +7,6 @@ package texasholdem.gamestate;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 
 import texasholdem.TexasHoldemConstants;
 
@@ -78,7 +77,7 @@ public class GameState implements Serializable, TexasHoldemConstants {
       return currentPlayer;
    }
 
-   public List<Card> getTableCards() {
+   public ArrayList<Card> getTableCards() {
       return tableCards;
    }
 
@@ -99,7 +98,7 @@ public class GameState implements Serializable, TexasHoldemConstants {
       this.pot = pot;
    }
 
-   public List<Player> getPlayers() {
+   public ArrayList<Player> getPlayers() {
       return players;
    }
 

@@ -146,6 +146,7 @@ public class GameServer implements TexasHoldemConstants {
                      if(gameState.addPlayer(newPlayer)) {
                         if(gameState.isFull()) {
                            gameState.setMode(GAME_MODE);
+                           new ServerGameRunner(gameState);
                         }
                         multicastGameState();
                      }
