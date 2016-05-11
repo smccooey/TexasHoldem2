@@ -5,8 +5,13 @@
  */
 package texasholdem.server;
 
-import texasholdem.gamestate.GameState;
+import csc445.Serializer;
 import texasholdem.gamestate.Player;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class handles networking required for game, and starting and finishing a
@@ -23,13 +28,11 @@ public class ServerGameRunner {
       // TODO code application logic here
       game = new ServerGameLogic();
       gameState = new GameState();
-/*
       Player homer = new Player("homer");
       Player flanders = new Player("flanders");
       Player andres = new Player("andres");
       game.newGame(homer, flanders, andres);
       play();
-*/
    }
 
    private void play() {
@@ -56,7 +59,7 @@ public class ServerGameRunner {
             /*Server waits, and gest GS back updates currentPlayer and reacts, */
 
             react(currentPlayer.getTurnOutCome(), currentPlayer);
-
+            currentPlayer.resetTakeTurn();
             /*USGS, move on to next player*/
             //game.printGameStatus();
             gameState.setNumberOfturnsLeft((gameState.getNumberOfturnsLeft() - 1));
@@ -83,13 +86,19 @@ public class ServerGameRunner {
          }
 
       }
-      //TODO: USGS = update and send gameStateObject
-      // We have to wait for all players to say what they want to do.
+      Serializer s = new Serializer();
+      try {
+         System.out.println(s.serialize(gameState).length);
+         //TODO: USGS = update and send gameStateObject
+         // We have to wait for all players to say what they want to do.
 
-      /* TODO: USGS,setting currentPlayer in GS to player at i and client is going to call takeTurn.
-       * client will update GS with it's own player object. Send back to server.Wait for a response with updated GS object. Check currentPlayers takeTurn field, react accordingly,reset its value.
-       *  USGS. Move on to next player.
-       */
+         /* TODO: USGS,setting currentPlayer in GS to player at i and client is going to call takeTurn.
+         * client will update GS with it's own player object. Send back to server.Wait for a response with updated GS object. Check currentPlayers takeTurn field, react accordingly,reset its value.
+         *  USGS. Move on to next player.
+         */
+      } catch (IOException ex) {
+         Logger.getLogger(ServerGameRunner.class.getName()).log(Level.SEVERE, null, ex);
+      }
    }
 
    //CHECK 0, FOLD 1,RAISE 2
@@ -114,4 +123,5 @@ public class ServerGameRunner {
       gameState.setPot(game.getPot());
       gameState.setTableCards(game.getTableCards());
    }
+
 }

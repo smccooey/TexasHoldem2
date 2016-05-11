@@ -15,9 +15,9 @@ public enum CardRankEnum {
    KING,
    ACE;
 
-      public String toString(){
-         String toString = name();
-         if(toString.startsWith("CARD")){toString = toString.substring(5);}
-         return toString;
-      }
+   public String toString(){
+      String toString = name();
+      if(toString.startsWith("CARD")){toString = toString.substring(5);}
+      return toString;
+   }
 }

@@ -34,7 +34,7 @@ public class GameServer implements TexasHoldemConstants {
    /**
     * Thread to listen for incoming packets
     */
-   private ServerListener listener;
+   private final ServerListener listener;
 
    /**
     * Scheduled timeouts for client acks for gamestate multicasts
@@ -49,7 +49,7 @@ public class GameServer implements TexasHoldemConstants {
    /**
     * Periodically multicasts heartbeats to clients
     */
-   private HeartbeatSender hbSender;
+   private final HeartbeatSender hbSender;
 
    /**
     * Group address
@@ -64,7 +64,7 @@ public class GameServer implements TexasHoldemConstants {
    /**
     * Queue of objects which have been received but not yet handled
     */
-   private Queue<Object> received;
+   private final Queue<Object> received;
 
    /**
     * The server's id
@@ -74,7 +74,7 @@ public class GameServer implements TexasHoldemConstants {
    /**
     * The current game state
     */
-   private volatile GameState gameState;
+   private final GameState gameState;
 
    /**
     * Main method.

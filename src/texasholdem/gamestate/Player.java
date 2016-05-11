@@ -1,7 +1,6 @@
 package texasholdem.gamestate;
 
 import java.io.Serializable;
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.Scanner;
 
@@ -16,31 +15,23 @@ public class Player implements Serializable {
    private String username;
    private int amountOfMoney;
    Scanner sc = new Scanner(System.in);
-   private long id;
-
-   /**
-    * The player's IP address and port number; used for unicast packets directed
-    * to the player
-    */
-   private SocketAddress address;
 
 
    public boolean[] play; // 0- check, 1-raise, 2- fold 3- call
    private int turnOutCome;
-   public Player(String name, long id){
+   public Player(String name){
       username = name;
       amountOfMoney = 1000;
       isOp = false;
       play = new boolean[4];
-      this.id = id;
    }
 
-   // accept a boolean whether player needs to raise or not.
+   // accept a boolean wether player needs to raise or not.
    public void takeTurn(){
-      System.out.println("IT IS YOUR TURN!");
+      System.out.println("\n");
       showState();
       boolean didLastPlayerRaise = false;
-      turnOutCome = -100;
+      turnOutCome = -1;
       if(!didLastPlayerRaise){
          System.out.println("CHECK 0, FOLD 1,RAISE 2");
          turnOutCome = sc.nextInt();
@@ -130,6 +121,10 @@ public class Player implements Serializable {
       return cards;
    }
 
+   public void resetTakeTurn(){
+      turnOutCome = 0;
+   }
+
    public void setCards(Card[] cards) {
       this.cards = cards;
    }
@@ -149,40 +144,6 @@ public class Player implements Serializable {
 
    @Override
    public String toString() {
-      return "Player{" + "isOp=" + isOp + ", username=" + username +
-            ", amountOfMoney=" + amountOfMoney + '}';
-   }
-
-   /**
-    * Returns the user's id.
-    * @return Th euser's id
-    */
-   public long getId() {
-      return id;
-   }
-
-   /**
-    * Determines whether two players are in fact the same player.
-    * @param other The other player
-    * @return true iff the other player's id is the same as this player's
-    */
-   public boolean equals(Player other) {
-      return id == other.getId();
-   }
-
-   /**
-    * Sets the player's address
-    * @param address The new address
-    */
-   public void setAddress(SocketAddress address) {
-      this.address = address;
-   }
-
-   /**
-    * Returns the player's address
-    * @return The player's address
-    */
-   public SocketAddress getAddress() {
-      return address;
+      return "Player{" + "isOp=" + isOp + ", username=" + username + ", amountOfMoney=" + amountOfMoney + '}';
    }
 }

@@ -10,21 +10,17 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-
-import static texasholdem.gamestate.CardRankEnum.*;
-import static texasholdem.gamestate.RankingEnum.*;
-
 /*
- * 01) ROYAL_FLUSH,
- * 02) STRAIGHT_FLUSH,
- * 03) FOUR_OF_A_KIND,
- * 04) FULL_HOUSE,
- * 05) FLUSH,
- * 06) STRAIGHT,
- * 07) THREE_OF_A_KIND,
- * 08) TWO_PAIR,
- * 09) ONE_PAIR,
- * 10) HIGH_CARD
+ *   01) ROYAL_FLUSH,
+ *   02) STRAIGHT_FLUSH,
+ *   03) FOUR_OF_A_KIND,
+ *   04) FULL_HOUSE,
+ *   05) FLUSH,
+ *   06) STRAIGHT,
+ *   07) THREE_OF_A_KIND,
+ *   08) TWO_PAIR,
+ *   09) ONE_PAIR,
+ *   10) HIGH_CARD
  */
 public class RankingUtil {
 
@@ -173,7 +169,7 @@ public class RankingUtil {
       return null;
    }
 
-   //S‹o 5 cartas seguidas de naipes diferentes, caso empate ganha aquele com a maior sequ�ncia.
+   //Sâ€¹o 5 cartas seguidas de naipes diferentes, caso empate ganha aquele com a maior sequï¿½ncia.
    public static List<Card> getStraight(Player player, List<Card> tableCards) {
       return getSequence(player, tableCards, 5, false);
    }

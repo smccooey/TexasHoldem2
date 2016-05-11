@@ -68,7 +68,7 @@ public class ServerListener extends Thread implements TexasHoldemConstants {
             obj = SharedUtilities.toObject(packet.getData());
          }
          catch(IOException | ClassNotFoundException ioecnfe) {
-            ioecnfe.printStackTrace();;
+            ioecnfe.printStackTrace();
          }
          if(obj == null) {
             continue;

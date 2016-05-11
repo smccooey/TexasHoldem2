@@ -104,6 +104,6 @@ class ClientListener extends Thread implements ClientState, TexasHoldemConstants
       if(future != null) {
          future.cancel(true);
       }
-      future = scheduler.schedule(() -> client.drop(), DROP_TIMEOUT, MILLISECONDS);
+      future = scheduler.schedule(client::drop, DROP_TIMEOUT, MILLISECONDS);
    }
 }

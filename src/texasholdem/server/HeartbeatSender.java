@@ -9,7 +9,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
 
-public class HeartbeatSender extends Thread implements TexasHoldemConstants {
+class HeartbeatSender extends Thread implements TexasHoldemConstants {
    /**
     * Address to which heartbeats are sent
     */
@@ -48,14 +48,14 @@ public class HeartbeatSender extends Thread implements TexasHoldemConstants {
     */
    @Override
    public void run() {
-      DatagramPacket hbPacket = null;
+      byte[] hbBytes = new byte[0];
       try {
-         byte[] hbBytes = SharedUtilities.toByteArray(new Heartbeat(id));
-         hbPacket = new DatagramPacket(hbBytes, hbBytes.length, group);
+         hbBytes = SharedUtilities.toByteArray(new Heartbeat(id));
       }
       catch(IOException ioe) {
          ioe.printStackTrace();
       }
+      DatagramPacket hbPacket = new DatagramPacket(hbBytes, hbBytes.length, group);;
       while(!cancel) {
          try {
             socket.send(hbPacket);

@@ -1,7 +1,6 @@
 package texasholdem;
 
 import java.io.Serializable;
-import java.io.StreamCorruptedException;
 
 /**
  * Notice to a player that their attempt to join the game has been rejected

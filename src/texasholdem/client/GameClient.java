@@ -33,7 +33,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
    /**
     * Separate thread to listen for incoming packets
     */
-   private ClientListener listener;
+   private final ClientListener listener;
 
    /**
     * Multicast address
@@ -78,7 +78,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
     /**
     * The player's name
     */
-   private String name;
+   private final String name;
 
    /**
     * The client's current state
@@ -93,7 +93,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
    /**
     * Queue of objects which have been received but not yet handled
     */
-   private Queue<Object> received;
+   private final Queue<Object> received;
 
    /**
     * Sequence number of the gamestate for which an ACK is expected
@@ -151,9 +151,10 @@ public class GameClient implements ClientState, TexasHoldemConstants {
    }
 
    /**
-    * Reacts to new input.
+    * First attempts to join the game, then simply reacts to new input.
     */
    private void doStuff() {
+      joinGame();
       while(!cancel) {
          if(!received.isEmpty()) {
             Object obj = received.poll();
@@ -214,11 +215,6 @@ public class GameClient implements ClientState, TexasHoldemConstants {
                }
             }
          }
-         else {
-            // Pretty sure this should never happen, but just in case...
-            throw new RuntimeException("Unexpected false value for " +
-                  "gameStateUpdated.");
-         }
       }
       try {
          // Take a nap
@@ -238,8 +234,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
     */
    void receiveObject(Object obj) {
       if(obj == null) {
-         throw new NullPointerException("Null received by " +
-               "GameClient.receiveObject.");
+         throw new NullPointerException("Null received by GameClient#receiveObject.");
       }
       received.add(obj);
 /*
@@ -277,7 +272,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
     * Returns the player's unique id.
     * @return The player's id
     */
-   public long getId() {
+   long getId() {
       return player.getId();
    }
 
@@ -286,7 +281,11 @@ public class GameClient implements ClientState, TexasHoldemConstants {
     */
    public void cancel() {
       listener.cancel();
+      scheduler.shutdown();
       cancel = true;
+      synchronized(this) {
+         notifyAll();
+      }
    }
 
    /**
@@ -329,7 +328,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
     * @param ser The object to be sent
     * @param tries remaining number of tries
     */
-   void send(Serializable ser, int tries) {
+   private void send(Serializable ser, int tries) {
       if(ser instanceof GameState) {
          if(future != null) {
             future.cancel(true);

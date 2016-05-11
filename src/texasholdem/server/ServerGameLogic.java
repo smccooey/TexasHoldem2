@@ -1,11 +1,5 @@
 package texasholdem.server;
 
-import texasholdem.gamestate.Card;
-import texasholdem.gamestate.Deck;
-import texasholdem.gamestate.IDeck;
-import texasholdem.gamestate.Player;
-import texasholdem.gamestate.RankingUtil;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -199,7 +193,7 @@ public class ServerGameLogic implements Serializable {
    public void printGameStatus(){
       System.out.println("Cards on table");
       for(Card card : tableCards){
-         System.out.print(card.toString()+":");
+         System.out.print("["+card.toString()+"]  ");
       }
       System.out.println("\nPOT: " + pot);
 
