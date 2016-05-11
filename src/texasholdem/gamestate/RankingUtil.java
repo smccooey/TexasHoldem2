@@ -10,6 +10,22 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import static texasholdem.gamestate.CardRankEnum.ACE;
+import static texasholdem.gamestate.CardRankEnum.CARD_10;
+import static texasholdem.gamestate.CardRankEnum.JACK;
+import static texasholdem.gamestate.CardRankEnum.KING;
+import static texasholdem.gamestate.CardRankEnum.QUEEN;
+import static texasholdem.gamestate.RankingEnum.FLUSH;
+import static texasholdem.gamestate.RankingEnum.FOUR_OF_A_KIND;
+import static texasholdem.gamestate.RankingEnum.FULL_HOUSE;
+import static texasholdem.gamestate.RankingEnum.HIGH_CARD;
+import static texasholdem.gamestate.RankingEnum.ONE_PAIR;
+import static texasholdem.gamestate.RankingEnum.ROYAL_FLUSH;
+import static texasholdem.gamestate.RankingEnum.STRAIGHT;
+import static texasholdem.gamestate.RankingEnum.STRAIGHT_FLUSH;
+import static texasholdem.gamestate.RankingEnum.THREE_OF_A_KIND;
+import static texasholdem.gamestate.RankingEnum.TWO_PAIR;
+
 /*
  *   01) ROYAL_FLUSH,
  *   02) STRAIGHT_FLUSH,
@@ -46,15 +62,13 @@ public class RankingUtil {
       //STRAIGHT_FLUSH
       rankingList = getStraightFlush(player, tableCards);
       if (rankingList != null) {
-         setRankingEnumAndList(player, STRAIGHT_FLUSH,
-               rankingList);
+         setRankingEnumAndList(player, STRAIGHT_FLUSH, rankingList);
          return;
       }
       //FOUR_OF_A_KIND
       rankingList = getFourOfAKind(player, tableCards);
       if (rankingList != null) {
-         setRankingEnumAndList(player, FOUR_OF_A_KIND,
-               rankingList);
+         setRankingEnumAndList(player, FOUR_OF_A_KIND, rankingList);
          return;
       }
       //FULL_HOUSE
@@ -78,8 +92,7 @@ public class RankingUtil {
       //THREE_OF_A_KIND
       rankingList = getThreeOfAKind(player, tableCards);
       if (rankingList != null) {
-         setRankingEnumAndList(player, THREE_OF_A_KIND,
-               rankingList);
+         setRankingEnumAndList(player, THREE_OF_A_KIND, rankingList);
          return;
       }
       //TWO_PAIR
@@ -174,8 +187,7 @@ public class RankingUtil {
       return getSequence(player, tableCards, 5, false);
    }
 
-   public static List<Card> getThreeOfAKind(Player player,
-         List<Card> tableCards) {
+   public static List<Card> getThreeOfAKind(Player player, List<Card> tableCards) {
       List<Card> mergedList = getMergedCardList(player, tableCards);
       return checkPair(mergedList, 3);
    }
@@ -214,8 +226,8 @@ public class RankingUtil {
       return highCard;
    }
 
-   private static List<Card> getSequence(Player player,
-         List<Card> tableCards, Integer sequenceSize, Boolean compareSuit) {
+   private static List<Card> getSequence(Player player, List<Card> tableCards, Integer sequenceSize,
+         Boolean compareSuit) {
       List<Card> orderedList = getOrderedCardList(player, tableCards);
       List<Card> sequenceList = new ArrayList<Card>();
 
@@ -299,8 +311,7 @@ public class RankingUtil {
       return true;
    }
 
-   private static List<CardRankEnum> toRankEnumList(Player player,
-         List<Card> tableCards) {
+   private static List<CardRankEnum> toRankEnumList(Player player, List<Card> tableCards) {
       List<CardRankEnum> rankEnumList = new ArrayList<CardRankEnum>();
 
       for (Card card : tableCards) {
@@ -313,8 +324,8 @@ public class RankingUtil {
       return rankEnumList;
    }
 
-   private static void setRankingEnumAndList(Player player,
-         RankingEnum rankingEnum, List<Card> rankingList) {
+   private static void setRankingEnumAndList(Player player, RankingEnum rankingEnum,
+         List<Card> rankingList) {
       player.setRankingEnum(rankingEnum);
       player.setRankingList(rankingList);
    }

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import texasholdem.server.ServerGameLogic;
 
 public class GameTexasHoldemRunner {
 
@@ -32,8 +33,7 @@ public class GameTexasHoldemRunner {
       }
    }
 
-   private static void getStatsFull(String path, int executions)
-         throws IOException {
+   private static void getStatsFull(String path, int executions) throws IOException {
       Map<String, Long> statsSimple = new HashMap<String, Long>();
       BufferedWriter bwFull = new BufferedWriter(new FileWriter(path));
       //Header
@@ -42,7 +42,7 @@ public class GameTexasHoldemRunner {
          ServerGameLogic game = new ServerGameLogic();
          Player player = new Player("");
          Player dealer = new Player("");
-         game.newGame( dealer, player);
+         game.newGame(dealer, player);
          game.deal();
          String retLine = new String(dealer.getRankingEnum().toString()
                + ";");

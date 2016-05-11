@@ -1,10 +1,21 @@
 package texasholdem.gamestate;
 
 import java.io.Serializable;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.Scanner;
 
 public class Player implements Serializable {
+
+   /**
+    * The player's IP address and port number; used for unicast packets directed to the player
+    */
+   private SocketAddress address;
+
+   /**
+    * The player's unique id
+    */
+   private long id;
 
    private boolean isOp;
    private static final long serialVersionUID = 4664480702994610549L;
@@ -19,11 +30,18 @@ public class Player implements Serializable {
 
    public boolean[] play; // 0- check, 1-raise, 2- fold 3- call
    private int turnOutCome;
-   public Player(String name){
+
+   /**
+    * Constructs a player,
+    * @param name The player's name
+    * @param id The player's unique id
+    */
+   public Player(String name, long id){
       username = name;
       amountOfMoney = 1000;
       isOp = false;
       play = new boolean[4];
+      this.id = id;
    }
 
    // accept a boolean wether player needs to raise or not.
@@ -144,6 +162,44 @@ public class Player implements Serializable {
 
    @Override
    public String toString() {
-      return "Player{" + "isOp=" + isOp + ", username=" + username + ", amountOfMoney=" + amountOfMoney + '}';
+      return "Player{" + "isOp=" + isOp + ", username=" + username + ", amountOfMoney=" +
+            amountOfMoney + '}';
+   }
+
+   /*
+    * These methods added by Sean
+    */
+
+   /**
+    * Returns the user's id.
+    * @return Th euser's id
+    */
+   public long getId() {
+      return id;
+   }
+
+   /**
+    * Determines whether two players are in fact the same player.
+    * @param other The other player
+    * @return true iff the other player's id is the same as this player's
+    */
+   public boolean equals(Player other) {
+      return id == other.getId();
+   }
+
+   /**
+    * Sets the player's address
+    * @param address The new address
+    */
+   public void setAddress(SocketAddress address) {
+      this.address = address;
+   }
+
+   /**
+    * Returns the player's address
+    * @return The player's address
+    */
+   public SocketAddress getAddress() {
+      return address;
    }
 }

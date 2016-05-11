@@ -14,7 +14,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class ServerListener extends Thread implements TexasHoldemConstants {
+class ServerListener extends Thread implements TexasHoldemConstants {
 
    /**
     * The game server
