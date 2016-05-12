@@ -150,6 +150,10 @@ public class GameClient implements ClientState, TexasHoldemConstants {
       doStuff();
    }
 
+   public static void main(String[] args) {
+      new GameState();
+   }
+
    /**
     * First attempts to join the game, then simply reacts to new input.
     */
