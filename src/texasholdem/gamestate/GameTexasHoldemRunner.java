@@ -33,7 +33,8 @@ public class GameTexasHoldemRunner {
       }
    }
 
-   private static void getStatsFull(String path, int executions) throws IOException {
+   private static void getStatsFull(String path, int executions)
+         throws IOException {
       Map<String, Long> statsSimple = new HashMap<String, Long>();
       BufferedWriter bwFull = new BufferedWriter(new FileWriter(path));
       //Header
@@ -44,7 +45,7 @@ public class GameTexasHoldemRunner {
          Player dealer = new Player("");
          game.newGame(dealer, player);
          game.deal();
-         String retLine = new String(dealer.getRankingEnum().toString() + ";");
+         String retLine = dealer.getRankingEnum().toString() + ";";
          retLine += player.getRankingEnum().toString() + ";";
          game.callFlop();
          retLine += dealer.getRankingEnum().toString() + ";";
@@ -57,7 +58,8 @@ public class GameTexasHoldemRunner {
          retLine += player.getRankingEnum().toString() + ";";
          List<Player> winnerList = game.getWinner();
          if (winnerList.size() == 1) {
-            retLine += (game.getWinner().equals(dealer)) ? "Dealer" : "Player";
+            retLine += (game.getWinner().equals(dealer)) ? "Dealer"
+                  : "Player";
          } else {
             retLine += "Draw Game";
          }
@@ -79,7 +81,8 @@ public class GameTexasHoldemRunner {
       bwFull.close();
    }
 
-   private static void getStatsSimple(String path, int executions) throws IOException {
+   private static void getStatsSimple(String path, int executions)
+         throws IOException {
       Map<RankingEnum, Long> statsSimple = new HashMap<RankingEnum, Long>();
       for (int i = 0; i < executions; i++) {
          ServerGameLogic game = new ServerGameLogic();

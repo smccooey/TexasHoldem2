@@ -5,17 +5,11 @@
  */
 package texasholdem.server;
 
-import texasholdem.SharedUtilities;
 import texasholdem.gamestate.GameState;
 import texasholdem.gamestate.Player;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * This class handles networking required for game, and starting and finishing a
- * game.
+ * This class handles networking required for game, and starting and finishing a game.
  *
  * @author al3x901
  */
@@ -24,15 +18,16 @@ public class ServerGameRunner {
    private ServerGameLogic game;
    private GameState gameState;
 
-   /**
-    * Constructs a game runner.
-    * @param gameState The gamestate
-    */
-   public ServerGameRunner(GameState gameState) {
+   public ServerGameRunner() {
       // TODO code application logic here
-      this.gameState = gameState;
       game = new ServerGameLogic();
-      game.newGame(gameState.getPlayers());
+      gameState = new GameState();
+      Player homer = new Player("homer");
+      Player flanders = new Player("flanders");
+//        Player flander1 = new Player("flanders1");
+//        Player flander2 = new Player("flanders2");
+      Player andres = new Player("andres");
+      game.newGame(homer, flanders, andres);
       play();
    }
 
@@ -41,6 +36,7 @@ public class ServerGameRunner {
       game.deal();
       updateGameStateObject();
 
+      main:
       while (gameState.getHandsDealt() <= 3) {
          game.printGameStatus();
          System.out.println("");
@@ -50,7 +46,8 @@ public class ServerGameRunner {
          while (gameState.getNumberOfturnsLeft() > 0) {
             //TODO: Make players call if raised.
             nextPlayer++;
-            int next = nextPlayer % gameState.getPlayers().size();
+            int numberOfPlayers = gameState.getPlayers().size();
+            int next = nextPlayer % numberOfPlayers;
             Player currentPlayer = game.getPlayers().get(next);
             gameState.setCurrentPlayer(currentPlayer);
             /*SGS with this player*/
@@ -58,18 +55,34 @@ public class ServerGameRunner {
             /*Happens in client*/
             currentPlayer.takeTurn();
             /*Server waits, and gest GS back updates currentPlayer and reacts, */
+            // 0 fold , 1 game is finished, 2 player just raised
+            switch (react(currentPlayer.getTurnOutCome(), currentPlayer)) {
+               case 0:
+                  nextPlayer--;
+                  break;
+               case 1:
+                  break main;
+               case 2:
+                  switchCallModeOn(next, currentPlayer.getTurnOutCome());
+                  break;
+               case 3:
+                  break;
+               default:
+                  break;
+            }
 
-            react(currentPlayer.getTurnOutCome(), currentPlayer);
             currentPlayer.resetTakeTurn();
+            currentPlayer.setCallMode(false);
             /*USGS, move on to next player*/
             //game.printGameStatus();
             gameState.setNumberOfturnsLeft((gameState.getNumberOfturnsLeft() - 1));
             updateGameStateObject();
-            System.out.println(gameState.getMessage()+":"+game.getPot());
+            currentPlayer.showState();
+            System.out.println(gameState.getMessage() + " Pot : " + game.getPot());
          }
-         gameState.setHandsDealt(gameState.getHandsDealt()+1);
-
-         switch(gameState.getHandsDealt()){
+         gameState.setHandsDealt(gameState.getHandsDealt() + 1);
+         resetMoneyOnTable();
+         switch (gameState.getHandsDealt()) {
             case 1:
                game.callFlop();
                updateGameStateObject();
@@ -85,38 +98,39 @@ public class ServerGameRunner {
             default:
                break;
          }
-
-      }
-
-      try {
-         System.out.println(SharedUtilities.toByteArray(gameState).length);
-         //TODO: USGS = update and send gameStateObject
-         // We have to wait for all players to say what they want to do.
-
-         /* TODO: USGS,setting currentPlayer in GS to player at i and client is going to call takeTurn.
-         * client will update GS with it's own player object. Send back to server.Wait for a response with updated GS object. Check currentPlayers takeTurn field, react accordingly,reset its value.
-         *  USGS. Move on to next player.
-         */
-      } catch (IOException ex) {
-         Logger.getLogger(ServerGameRunner.class.getName()).log(Level.SEVERE, null, ex);
       }
    }
 
-   //CHECK 0, FOLD 1,RAISE 2
-   public void react(int turnOutCome, Player p) {
+   //CHECK 0, FOLD 1,RAISE 2, CALL 3
+   // REACT_CODE: 0 folded player, 1 only one player left, 2 player raised
+   public int react(int turnOutCome, Player p) {
+      int REACT_CODE = -1;
       if (turnOutCome == 1) {
          // FOLD
          game.removePlayer(p);
          gameState.setMessage(p.getUsername() + " has folded");
-      } else if (turnOutCome > 1) {
-         // RAISE
-         game.addToPot(turnOutCome);
-         gameState.setMessage(p.getUsername() + " raised " + turnOutCome);
-         gameState.setNumberOfturnsLeft(gameState.getPlayers().size()+1);
+         REACT_CODE = 0;
+         if (gameState.getPlayers().size() == 1) {
+            REACT_CODE = 1;
+         }
       } else if (turnOutCome == 0) {
+         //CHECKED
          gameState.setMessage(p.getUsername() + " checked");
+      } else if (turnOutCome > 1) {
+         // RAISE - call
+         game.addToPot(turnOutCome);
+         if (p.isCallMode()) {
+            //Calling
+            gameState.setMessage(p.getUsername() + " called " + turnOutCome);
+            REACT_CODE = 3;
+         } else {
+            //Raising
+            gameState.setMessage(p.getUsername() + " raised " + turnOutCome);
+            gameState.setNumberOfturnsLeft(gameState.getPlayers().size() + 1);
+            REACT_CODE = 2;
+         }
       }
-      p.setTurnOutCome(-1);
+      return REACT_CODE;
    }
 
    public void updateGameStateObject() {
@@ -125,4 +139,25 @@ public class ServerGameRunner {
       gameState.setTableCards(game.getTableCards());
    }
 
+   public void switchCallModeOn(int currentPlayer, int amountRaised) {
+      // resetting values
+      for (int i = 0; i < game.getPlayers().size(); i++) {
+         game.getPlayers().get(i).setCallMode(false);
+      }
+
+      for (int i = 0; i < game.getPlayers().size(); i++) {
+         if (i != currentPlayer) {
+            game.getPlayers().get(i).setCallMode(true);
+            game.getPlayers().get(i).setRaiseAmount(amountRaised);
+         }
+      }
+   }
+
+   public void resetMoneyOnTable() {
+      // resetting values
+      for (int i = 0; i < game.getPlayers().size(); i++) {
+         game.getPlayers().get(i).setAmountOnTable(0);
+         game.getPlayers().get(i).setRaiseAmount(0);
+      }
+   }
 }
