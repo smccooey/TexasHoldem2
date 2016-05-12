@@ -171,19 +171,18 @@ public class GameClient implements ClientState, TexasHoldemConstants {
                      if(newGameState.getSequenceNumber() > gameState.getSequenceNumber()) {
                         // Update gamestate field and let main thread handle it
                         gameState = newGameState;
-                        if(gameState.getPlayers().contains(player)) {
-                           // Player has now joined the game
+                        int index = gameState.getPlayers().indexOf(player);
+                        if(index != -1) {
+                           System.out.println(gameState.getMessage());
+                           player = gameState.getPlayers().get(index);
+                           System.out.println("You " + (player.isOp() ? "are" : "are not") +
+                                 " the OP.");
                            state = JOINED;
-                           System.out.println("Players in game:");
-                           for(Player p : gameState.getPlayers()) {
-                              System.out.println("   " + p.getUsername());
-                           }
-                           System.out.println();
                         }
-                     }
-                     else {
-                        // Player not in game. Resend player object
-                        joinGame();
+                        else {
+                           // Player not in game. Resend player object
+                           joinGame();
+                        }
                      }
                   }
                   else if(obj instanceof Rejection) {
@@ -201,10 +200,18 @@ public class GameClient implements ClientState, TexasHoldemConstants {
                }
                else if(state == JOINED) {
                   // Player is waiting for game to start
-                  System.out.println("Players in game:");
-                  for(Player p : gameState.getPlayers()) {
-                     System.out.println("   " + p.getUsername());
+                  if(gameState.getMode() == PREGAME_MODE) {
+                     System.out.println("Players in game:");
+                     for(Player p : gameState.getPlayers()) {
+                        System.out.println("   " + p.getUsername());
+                     }
                   }
+                  else if(gameState.getMode() == GAME_MODE) {
+                     state = IN_GAME;
+                     System.out.println("Game has started.");
+                     takeTurn();
+                  }
+                  System.out.println(gameState.getMessage());
                   System.out.println();
                }
                else if(state == IN_GAME) {
@@ -224,6 +231,20 @@ public class GameClient implements ClientState, TexasHoldemConstants {
       }
       catch(InterruptedException ie) {
          // Do nothing
+      }
+   }
+
+   private void takeTurn() {
+      if(gameState.getCurrentPlayer().equals(player)) {
+         player.takeTurn();
+         int index = gameState.getPlayers().indexOf(player);
+         if(index != -1) {
+            gameState.getPlayers().set(index, player);
+         }
+         send(player, 5);
+      }
+      else {
+         gameState.printGameStatus();
       }
    }
 
@@ -328,7 +349,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
     * @param ser The object to be sent
     * @param tries remaining number of tries
     */
-   private void send(Serializable ser, int tries) {
+   public void send(Serializable ser, int tries) {
       if(ser instanceof GameState) {
          if(future != null) {
             future.cancel(true);

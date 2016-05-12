@@ -179,4 +179,19 @@ public class GameState implements Serializable, TexasHoldemConstants {
    public boolean getStartGame() {
       return startGame;
    }
+
+   public void printGameStatus(){
+      System.out.println("Cards on table");
+      for(Card card : tableCards){
+         System.out.print("["+card.toString()+"]  ");
+      }
+      System.out.println("\nPOT: " + pot);
+
+      System.out.println("Players");
+      for(Player p : players){
+         System.out.print(p.getUsername()+":"+p.getAmountOfMoney()+" ");
+      }
+      System.out.println();
+   }
+
 }

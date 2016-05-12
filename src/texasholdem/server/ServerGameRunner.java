@@ -126,7 +126,7 @@ public class ServerGameRunner {
       } else if (turnOutCome > 1) {
          // RAISE - call
          game.addToPot(turnOutCome);
-         if (p.isCallMode()) {
+         if (p.isCallModeOn()) {
             //Calling
             gameState.setMessage(p.getUsername() + " called " + turnOutCome);
             REACT_CODE = 3;
