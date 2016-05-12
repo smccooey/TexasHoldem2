@@ -2,7 +2,6 @@ package texasholdem.server;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import texasholdem.gamestate.Card;
@@ -17,20 +16,18 @@ public class ServerGameLogic implements Serializable {
    private static final long serialVersionUID = 967261359515323981L;
    private static final int BLIND = 50;
    private IDeck deck;
-   private List<Player> players;
-   private List<Card> tableCards;
+   private ArrayList<Player> players;
+   private ArrayList<Card> tableCards;
    private int pot = 0;
    public Player OP;
 
-   public void newGame(Player op, Player... _players) {
+   public void newGame(ArrayList<Player> players) {
       deck = new Deck();
       tableCards = new ArrayList<Card>();
-      players = new ArrayList<Player>();
+      this.players = players;
       //the game needs at least one player
-      ((Player) op).setAsOp();
-      OP = op;
-      players.add(op);
-      players.addAll(Arrays.asList(_players));
+      players.get(0).setAsOp();
+      OP = players.get(0);
    }
 
    public void addToPot(int p){
@@ -75,9 +72,9 @@ public class ServerGameLogic implements Serializable {
       checkPlayersRanking();
    }
 
-   public List<Player> getWinner() {
+   public ArrayList<Player> getWinner() {
       checkPlayersRanking();
-      List<Player> winnerList = new ArrayList<Player>();
+      ArrayList<Player> winnerList = new ArrayList<Player>();
       Player winner = players.get(0);
       Integer winnerRank = RankingUtil.getRankingToInt(winner);
       winnerList.add(winner);
@@ -170,7 +167,7 @@ public class ServerGameLogic implements Serializable {
       return player.getCards()[0];
    }
 
-   public List<Card> getTableCards() {
+   public ArrayList<Card> getTableCards() {
       return tableCards;
    }
 
@@ -191,7 +188,7 @@ public class ServerGameLogic implements Serializable {
       }
    }
 
-   public List<Player> getPlayers() {
+   public ArrayList<Player> getPlayers() {
       return players;
    }
 

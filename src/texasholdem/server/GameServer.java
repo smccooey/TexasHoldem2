@@ -74,7 +74,9 @@ public class GameServer implements TexasHoldemConstants {
    /**
     * The current game state
     */
-   private final GameState gameState;
+   private volatile GameState gameState;
+
+   private static GameServer instance;
 
    /**
     * Main method.
@@ -122,6 +124,8 @@ public class GameServer implements TexasHoldemConstants {
       hbSender = new HeartbeatSender(group, socket, id);
       hbSender.start();
 
+      instance = this;
+
       // Do stuff();
       doStuff();
    }
@@ -139,6 +143,7 @@ public class GameServer implements TexasHoldemConstants {
                   if(gameState.getMode() == WAITING_MODE) {
                      // This is the first player. Start new game
                      gameState.setMode(PREGAME_MODE);
+                     gameState.addPlayer(newPlayer);
                      multicastGameState();
                   }
                   else if(gameState.getMode() == PREGAME_MODE) {
@@ -146,6 +151,7 @@ public class GameServer implements TexasHoldemConstants {
                      if(gameState.addPlayer(newPlayer)) {
                         if(gameState.isFull()) {
                            gameState.setMode(GAME_MODE);
+                           gameState.setStartGame(true);
                            new ServerGameRunner(gameState);
                         }
                         multicastGameState();
@@ -161,8 +167,20 @@ public class GameServer implements TexasHoldemConstants {
                }
                else if(obj instanceof GameState) {
                   GameState newGameState = (GameState)obj;
-                  if(newGameState.getSender() == gameState.getCurrentPlayer().getId()) {
-                     // Gamestate received from current player
+                  if(gameState.getMode() == PREGAME_MODE) {
+                     if(gameState.getPlayers().size() > 1 && gameState.getStartGame()) {
+                        gameState.setMode(GAME_MODE);
+                        new ServerGameRunner(gameState);
+                     }
+                     else {
+                        gameState.setStartGame(false);
+                     }
+                  }
+                  else if(gameState.getMode() == GAME_MODE) {
+                     if(newGameState.getSender() == gameState.getCurrentPlayer().getId()) {
+                        // Gamestate received from current player
+
+                     }
                   }
                }
                else if(obj instanceof Ack) {
@@ -229,6 +247,15 @@ public class GameServer implements TexasHoldemConstants {
       listener.cancel();
       scheduler.shutdown();
       cancel = true;
+   }
+
+   /**
+    * Updates the gamestate object and multicasts it to all clients.
+    * @param gameState The new gamestate
+    */
+   public void multicastGameState(GameState gameState) {
+      this.gameState = gameState;
+      multicastGameState();
    }
 
    /**
@@ -321,5 +348,9 @@ public class GameServer implements TexasHoldemConstants {
             ioe.printStackTrace();
          }
       }
+   }
+
+   public static GameServer getInstance() {
+      return instance;
    }
 }

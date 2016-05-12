@@ -18,16 +18,11 @@ public class ServerGameRunner {
    private ServerGameLogic game;
    private GameState gameState;
 
-   public ServerGameRunner() {
+   public ServerGameRunner(GameState gameState) {
       // TODO code application logic here
       game = new ServerGameLogic();
-      gameState = new GameState();
-      Player homer = new Player("homer");
-      Player flanders = new Player("flanders");
-//        Player flander1 = new Player("flanders1");
-//        Player flander2 = new Player("flanders2");
-      Player andres = new Player("andres");
-      game.newGame(homer, flanders, andres);
+      this.gameState = gameState;
+      game.newGame(gameState.getPlayers());
       play();
    }
 
@@ -51,7 +46,19 @@ public class ServerGameRunner {
             Player currentPlayer = game.getPlayers().get(next);
             gameState.setCurrentPlayer(currentPlayer);
             /*SGS with this player*/
-
+            GameServer.getInstance().multicastGameState(gameState);
+            synchronized(this) {
+               try {
+                  wait();
+               }
+               catch(InterruptedException ie) {
+                  // Do nothing
+               }
+               catch(Exception e) {
+                  e.printStackTrace();
+                  System.exit(1);
+               }
+            }
             /*Happens in client*/
             currentPlayer.takeTurn();
             /*Server waits, and gest GS back updates currentPlayer and reacts, */

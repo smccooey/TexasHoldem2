@@ -70,6 +70,15 @@ class ClientListener extends Thread implements ClientState, TexasHoldemConstants
    @Override
    public void run() {
       DatagramPacket packetIn = new DatagramPacket(new byte[MAX_PACKET_SIZE], MAX_PACKET_SIZE);
+      byte[] hbBytes = null;
+      try {
+         hbBytes = SharedUtilities.toByteArray(new Heartbeat(client.getId()));
+      }
+      catch(IOException ioe) {
+         ioe.printStackTrace();
+         System.exit(1);
+      }
+      DatagramPacket hbPacket = new DatagramPacket(hbBytes, hbBytes.length, server);
       while(!cancel) {
          try {
             socket.receive(packetIn);
@@ -78,8 +87,7 @@ class ClientListener extends Thread implements ClientState, TexasHoldemConstants
                // Reset timeout
                schedule();
                // Send heartbeat to server
-               byte[] hbBytes = SharedUtilities.toByteArray(new Heartbeat(client.getId()));
-               socket.send(new DatagramPacket(hbBytes, hbBytes.length, server));
+               socket.send(hbPacket);
             }
             else {
                // Forward object to client

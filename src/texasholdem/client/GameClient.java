@@ -333,7 +333,9 @@ public class GameClient implements ClientState, TexasHoldemConstants {
          if(future != null) {
             future.cancel(true);
          }
-         expectedAck = ((GameState)ser).getSequenceNumber();
+         GameState gs = (GameState)ser;
+         expectedAck = gs.getSequenceNumber();
+         gs.setSender(getId());
       }
       if(tries > 0) {
          future = scheduler.schedule(() -> send(ser, tries - 1), ACK_TIMEOUT, MILLISECONDS);
