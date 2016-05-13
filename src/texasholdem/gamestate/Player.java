@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.Scanner;
+import texasholdem.client.GameClient;
 
 public class Player implements Serializable {
 
@@ -45,13 +46,13 @@ public class Player implements Serializable {
    }
 
     // accept a boolean whether player needs to raise or not.
-    public void takeTurn(Scanner sc) {
+    public boolean takeTurn() {
         System.out.println("\n");
         showState();
         turnOutCome = -1;
         if (!callMode) {
             System.out.println("CHECK 0, FOLD 1, RAISE 2");
-            turnOutCome = sc.nextInt();
+            turnOutCome = GameClient.in.nextInt();
             if (turnOutCome == 2) {
                 boolean validPlay = false;
                 while (!validPlay) {
@@ -61,7 +62,7 @@ public class Player implements Serializable {
                     } else {
                         System.out.println("HOW MUCH? you have [" + amountOfMoney + "]");
                     }
-                    turnOutCome = sc.nextInt();
+                    turnOutCome = GameClient.in.nextInt();
                     if (!(turnOutCome > amountOfMoney) && turnOutCome > 1) {
                         takeMoney(turnOutCome);
                         amountOnTable += turnOutCome;
@@ -75,14 +76,14 @@ public class Player implements Serializable {
         else {
             System.out.println("CALL 0, FOLD 1, RAISE 2");
             System.out.println("BET TO PAY: $" + (raiseAmount - amountOnTable));
-            turnOutCome = sc.nextInt();
+            turnOutCome = GameClient.in.nextInt();
             fold = turnOutCome == 1;
             if (turnOutCome == 2) {
                 boolean validPlay = false;
                 while (!validPlay) {
                     System.out.println("HOW MUCH? you have [" + amountOfMoney + "]");
                     System.out.println("Choose an amount between to be raised on " + raiseAmount);
-                    turnOutCome = sc.nextInt();
+                    turnOutCome = GameClient.in.nextInt();
                     if (!(turnOutCome + raiseAmount > amountOfMoney) && turnOutCome > 1) {
                         amountOnTable += turnOutCome;
                         turnOutCome += raiseAmount;
@@ -101,7 +102,7 @@ public class Player implements Serializable {
                     turnOutCome = callAmount;
                 } else {
                     System.out.println("GO ALL IN 0, OR FOLD 1");
-                    turnOutCome = sc.nextInt();
+                    turnOutCome = GameClient.in.nextInt();
                     if (turnOutCome == 1) {
                         takeMoney(amountOfMoney);
                         turnOutCome = amountOfMoney;
@@ -110,6 +111,7 @@ public class Player implements Serializable {
                 raiseAmount = 0;
             }
         }
+       return true;
     }
 
     public String getUsername() {

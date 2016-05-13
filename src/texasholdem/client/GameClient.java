@@ -64,11 +64,6 @@ public class GameClient implements ClientState, TexasHoldemConstants {
    private Player player;
 
    /**
-    * Reads user input
-    */
-   private final Scanner in;
-
-   /**
     * Schedules timeout tasks
     */
    private final ScheduledThreadPoolExecutor scheduler;
@@ -113,11 +108,12 @@ public class GameClient implements ClientState, TexasHoldemConstants {
 
    private InetAddress groupAddress;
 
+   public static Scanner in = new Scanner(System.in);
+
    /**
     * Constructs a client in the Texas Hold 'em game.
     */
    public GameClient() {
-      in = new Scanner(System.in);
       System.out.print("Enter your name: ");
       name = in.nextLine();
 /*
@@ -235,6 +231,10 @@ public class GameClient implements ClientState, TexasHoldemConstants {
                      // System.err.println("Handling startrequest.\n");
                      gameState.setMode(GAME_MODE);
                      state = IN_GAME;
+                     if(consoleListener != null) {
+                        consoleListener.cancel();
+                        consoleListener = null;
+                     }
                      send(gameState);
                   }
                   else if(obj instanceof GameState) {
@@ -248,11 +248,10 @@ public class GameClient implements ClientState, TexasHoldemConstants {
                            for(Player p : gameState.getPlayers()) {
                               System.out.println("   " + p.getUsername());
                            }
-                           if(consoleListener != null) {
-                              consoleListener.cancel();
+                           if(consoleListener == null) {
+                              consoleListener = new ConsoleListener(this);
+                              consoleListener.start();
                            }
-                           consoleListener = new ConsoleListener(this, in);
-                           consoleListener.start();
                         }
                         else if(gameState.getMode() == GAME_MODE) {
                            state = IN_GAME;
@@ -319,18 +318,14 @@ public class GameClient implements ClientState, TexasHoldemConstants {
             gameState.getPlayers().set(index, player);
          }
 
-         ExecutorService ex = Executors.newSingleThreadExecutor();
-         Future<?> turnTaker = ex.submit(() -> player.takeTurn(in));
+         Future<Boolean> turnTaker = Executors.newSingleThreadExecutor().submit(() -> player.takeTurn());
 
          new Thread(() -> {
             try {
                turnTaker.get();
             }
-            catch(InterruptedException e) {
-               e.printStackTrace();
-            }
-            catch(ExecutionException e) {
-               e.printStackTrace();
+            catch(InterruptedException | ExecutionException ieee) {
+               ieee.printStackTrace();
             }
             // System.err.println("SENDING GAME STATE");
             player = gameState.getPlayers().get(index);

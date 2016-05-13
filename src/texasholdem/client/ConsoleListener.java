@@ -1,5 +1,6 @@
 package texasholdem.client;
 
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import texasholdem.StartRequest;
 
@@ -13,22 +14,26 @@ public class ConsoleListener extends Thread {
     */
    private GameClient client;
 
-   private Scanner in;
 
    private volatile boolean cancel;
 
-   ConsoleListener(GameClient client, Scanner in) {
+   ConsoleListener(GameClient client) {
       this.client = client;
-      this.in = in;
       cancel = false;
    }
 
    public void run() {
+      System.out.println("Enter 1 to start game.");
       while(!cancel) {
-         System.out.println("Enter 1 to start game.");
-         if(in.nextLine().equals("1")) {
-            client.receiveObject(new StartRequest());
-            cancel();
+         try {
+            String input = GameClient.in.nextLine();
+            if(input.equals("1")) {
+               client.receiveObject(new StartRequest());
+               cancel();
+            }
+         }
+         catch(IndexOutOfBoundsException | NoSuchElementException ioobensee) {
+
          }
       }
    }
