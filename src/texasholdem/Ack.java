@@ -44,4 +44,8 @@ public class Ack implements Serializable {
    public long getSender() {
       return sender;
    }
+
+   public String toString() {
+      return getClass().getName() + ": seqno=" + sequenceNumber + "; sender=" + sender;
+   }
 }

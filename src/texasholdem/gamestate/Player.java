@@ -55,7 +55,8 @@ public class Player implements Serializable {
                 boolean validPlay = false;
                 while (!validPlay) {
                     if (amountOnTable > 0) {
-                        System.out.println("Choose an amount between to be raised on " + amountOnTable);
+                        System.out.println("Choose an amount between to be raised on " +
+                              amountOnTable);
                     } else {
                         System.out.println("HOW MUCH? you have [" + amountOfMoney + "]");
                     }
@@ -69,7 +70,8 @@ public class Player implements Serializable {
                     }
                 }
             }
-        } else {
+        }
+        else {
             System.out.println("CALL 0, FOLD 1,RAISE 2");
             System.out.println("BET TO PAY: $" + (raiseAmount - amountOnTable));
             turnOutCome = sc.nextInt();

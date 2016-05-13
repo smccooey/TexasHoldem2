@@ -14,22 +14,24 @@ import texasholdem.gamestate.Player;
  *
  * @author al3x901
  */
-public class ServerGameRunner {
+public class ServerGameRunner extends Thread {
 
    private ServerGameLogic game;
-   private GameState gameState;
+   private volatile GameState gameState;
    private Scanner in;
+   private final GameServer gameServer;
 
-   public ServerGameRunner(GameState gameState) {
+   public ServerGameRunner(GameState gameState, GameServer gameServer) {
       // TODO code application logic here
       game = new ServerGameLogic();
       this.gameState = gameState;
       game.newGame(gameState.getPlayers());
       in = new Scanner(System.in);
-      play();
+      this.gameServer = gameServer;
+      // play();
    }
 
-   private void play() {
+   public void run() {
       gameState.setCurrentPlayer(game.OP);
       game.deal();
       updateGameStateObject();
@@ -41,6 +43,7 @@ public class ServerGameRunner {
          System.out.println("");
          int nextPlayer = -1;
          gameState.setNumberOfturnsLeft(gameState.getPlayers().size());
+         System.out.println("BEFORE WHILE LOOP ******");
          while (gameState.getNumberOfturnsLeft() > 0) {
             //TODO: Make players call if raised.
             nextPlayer++;
@@ -49,21 +52,21 @@ public class ServerGameRunner {
             Player currentPlayer = game.getPlayers().get(next);
             gameState.setCurrentPlayer(currentPlayer);
             /*SGS with this player*/
-            GameServer.getInstance().multicastGameState(gameState);
+            gameServer.multicastGameState(gameState);
             synchronized(this) {
                try {
                   wait();
                }
                catch(InterruptedException ie) {
-                  // Do nothing
-               }
-               catch(Exception e) {
-                  e.printStackTrace();
-                  System.exit(1);
+
                }
             }
+
+            System.out.println("***********GAME STATE IN SERVERGAME RUNNER AFTER WAIT*************");
+            System.out.println(gameState.toString());
+            System.out.println("***********GAME STATE IN SERVERGAME RUNNER AFTER WAIT*************");
+
             /*Happens in client*/
-            currentPlayer.takeTurn(in);
             /*Server waits, and gest GS back updates currentPlayer and reacts, */
             // 0 fold , 1 game is finished, 2 player just raised
             switch (react(currentPlayer.getTurnOutCome(), currentPlayer)) {
@@ -94,14 +97,17 @@ public class ServerGameRunner {
          resetMoneyOnTable();
          switch (gameState.getHandsDealt()) {
             case 1:
+               System.out.println("FLOP");
                game.callFlop();
                updateGameStateObject();
                break;
             case 2:
+               System.out.println("turn");
                game.betTurn();
                updateGameStateObject();
                break;
             case 3:
+               System.out.println("river");
                game.betRiver();
                updateGameStateObject();
                break;
@@ -170,4 +176,16 @@ public class ServerGameRunner {
          game.getPlayers().get(i).setRaiseAmount(0);
       }
    }
+
+   public GameState getGameState() {
+      return gameState;
+   }
+
+   public void setGameState(GameState gameState) {
+      this.gameState = gameState;
+      synchronized(this) {
+         notifyAll();
+      }
+   }
+
 }

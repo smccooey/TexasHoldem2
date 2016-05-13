@@ -1,5 +1,6 @@
 package texasholdem.client;
 
+import texasholdem.Ack;
 import texasholdem.Heartbeat;
 import texasholdem.SharedUtilities;
 import texasholdem.TexasHoldemConstants;
@@ -90,6 +91,10 @@ class ClientListener extends Thread implements ClientState, TexasHoldemConstants
                   // Send heartbeat to server
                   socket.send(hbPacket);
                }
+            }
+            else if(obj instanceof Ack) {
+               Ack ack = (Ack)obj;
+               client.handleAck(ack);
             }
             else {
                // Forward object to client
