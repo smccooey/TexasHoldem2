@@ -18,7 +18,6 @@ public class Player implements Serializable {
     private boolean callMode;
     private int raiseAmount;
     private int amountOnTable;
-    Scanner sc = new Scanner(System.in);
 
     public boolean[] play; // 0- check, 1-raise, 2- fold 3- call 
     private int turnOutCome;
@@ -34,7 +33,6 @@ public class Player implements Serializable {
     */
    private SocketAddress address;
 
-
    public Player(String name, long id) {
       username = name;
       amountOfMoney = 1000;
@@ -46,7 +44,7 @@ public class Player implements Serializable {
    }
 
     // accept a boolean whether player needs to raise or not.
-    public void takeTurn() {
+    public void takeTurn(Scanner sc) {
         System.out.println("\n");
         showState();
         turnOutCome = -1;
@@ -182,7 +180,8 @@ public class Player implements Serializable {
 
     //Show cards and amount of money
     public void showState() {
-        System.out.println(username + " you Have a [" + cards[0].toString() + "] and [" + cards[1].toString() + "] $" + amountOfMoney + " Money on table $" + amountOnTable);
+        System.out.println(username + " you Have a [" + cards[0].toString() + "] and [" +
+              cards[1].toString() + "] $" + amountOfMoney + " Money on table $" + amountOnTable);
     }
 
     public int getAmountOfMoney() {
@@ -227,8 +226,8 @@ public class Player implements Serializable {
     * @param other The other player
     * @return true iff the other player's id is the same as this player's
     */
-   public boolean equals(Player other) {
-      return id == other.getId();
+   public boolean equals(Object other) {
+      return other instanceof Player && id == ((Player)other).getId();
    }
 
    /**

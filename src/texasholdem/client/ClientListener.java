@@ -83,11 +83,13 @@ class ClientListener extends Thread implements ClientState, TexasHoldemConstants
          try {
             socket.receive(packetIn);
             Object obj = SharedUtilities.toObject(packetIn.getData());
-            if(obj instanceof Heartbeat && client.getState() != JOINING) {
-               // Reset timeout
-               schedule();
-               // Send heartbeat to server
-               socket.send(hbPacket);
+            if(obj instanceof Heartbeat) {
+               if(client.getState() != JOINING) {
+                  // Reset timeout
+                  schedule();
+                  // Send heartbeat to server
+                  socket.send(hbPacket);
+               }
             }
             else {
                // Forward object to client

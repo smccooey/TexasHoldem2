@@ -6,10 +6,10 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledFuture;
@@ -100,18 +100,24 @@ public class GameServer implements TexasHoldemConstants {
          System.exit(1);
       }
       group = new InetSocketAddress(groupAddress, PORT);
-
+/*
       long tempId = 0;
+*/
       try {
-         socket = new MulticastSocket(PORT);
+         socket = new DatagramSocket(PORT);
+/*
          tempId = SharedUtilities.bytesToLong(((MulticastSocket)socket).getNetworkInterface().
                getHardwareAddress());
+*/
       }
       catch(IOException ioe) {
          ioe.printStackTrace();
          System.exit(1);
       }
+/*
       id = tempId;
+*/
+      id = new Random().nextLong();
 
       gameState = new GameState();
 
@@ -130,6 +136,8 @@ public class GameServer implements TexasHoldemConstants {
       doStuff();
    }
 
+   private ServerGameRunner runner;
+
    /**
     * Does stuff as long as there is stuff to be done.
     */
@@ -144,6 +152,7 @@ public class GameServer implements TexasHoldemConstants {
                      // This is the first player. Start new game
                      gameState.setMode(PREGAME_MODE);
                      gameState.addPlayer(newPlayer);
+                     gameState.setMessage("WAITING FOR PLAYERS...");
                      multicastGameState();
                   }
                   else if(gameState.getMode() == PREGAME_MODE) {
@@ -152,6 +161,7 @@ public class GameServer implements TexasHoldemConstants {
                         if(gameState.isFull()) {
                            gameState.setMode(GAME_MODE);
                            gameState.setStartGame(true);
+
                            new ServerGameRunner(gameState);
                         }
                         multicastGameState();
@@ -166,7 +176,7 @@ public class GameServer implements TexasHoldemConstants {
                   }
                }
                else if(obj instanceof GameState) {
-                  GameState newGameState = (GameState)obj;
+                  gameState = (GameState)obj;
                   if(gameState.getMode() == PREGAME_MODE) {
                      if(gameState.getPlayers().size() > 1 && gameState.getStartGame()) {
                         gameState.setMode(GAME_MODE);
@@ -177,10 +187,13 @@ public class GameServer implements TexasHoldemConstants {
                      }
                   }
                   else if(gameState.getMode() == GAME_MODE) {
-                     if(newGameState.getSender() == gameState.getCurrentPlayer().getId()) {
-                        // Gamestate received from current player
-
+                     // Gamestate received from current player
+                     System.err.println("Runner: " + runner);
+                     if(runner == null) {
+                        System.err.println("Starting game runner.");
+                        runner = new ServerGameRunner(gameState);
                      }
+                     multicastGameState();
                   }
                }
                else if(obj instanceof Ack) {
@@ -233,6 +246,7 @@ public class GameServer implements TexasHoldemConstants {
     * @param obj The object received
     */
    void receiveObject(Object obj) {
+      System.err.println(obj + " added to queue.");
       received.add(obj);
       synchronized(this) {
          notifyAll();
@@ -262,6 +276,7 @@ public class GameServer implements TexasHoldemConstants {
     * Sends the current gamestate to all players in the multicast group.
     */
    private void multicastGameState() {
+      // System.err.println("Multicasting " + gameState + ".");
       gameState.incrementSequenceNumber();
       gameState.setSender(id);
       byte[] stateBytes = null;
@@ -300,7 +315,9 @@ public class GameServer implements TexasHoldemConstants {
    private void send(Player player, Serializable ser) {
       byte[] bytes = null;
       try {
-         bytes =SharedUtilities.toByteArray(ser);
+         bytes = SharedUtilities.toByteArray(ser);
+         System.err.println("Server sending " + ser + " to " + player.getUsername() + "@" +
+               player.getAddress() + "; " + bytes.length + ".");
       }
       catch(IOException ioe) {
          ioe.printStackTrace();

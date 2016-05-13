@@ -5,6 +5,7 @@
  */
 package texasholdem.server;
 
+import java.util.Scanner;
 import texasholdem.gamestate.GameState;
 import texasholdem.gamestate.Player;
 
@@ -17,12 +18,14 @@ public class ServerGameRunner {
 
    private ServerGameLogic game;
    private GameState gameState;
+   private Scanner in;
 
    public ServerGameRunner(GameState gameState) {
       // TODO code application logic here
       game = new ServerGameLogic();
       this.gameState = gameState;
       game.newGame(gameState.getPlayers());
+      in = new Scanner(System.in);
       play();
    }
 
@@ -60,7 +63,7 @@ public class ServerGameRunner {
                }
             }
             /*Happens in client*/
-            currentPlayer.takeTurn();
+            currentPlayer.takeTurn(in);
             /*Server waits, and gest GS back updates currentPlayer and reacts, */
             // 0 fold , 1 game is finished, 2 player just raised
             switch (react(currentPlayer.getTurnOutCome(), currentPlayer)) {

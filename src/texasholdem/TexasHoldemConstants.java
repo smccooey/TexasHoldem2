@@ -18,12 +18,12 @@ public interface TexasHoldemConstants {
    /**
     * Server's IP address
     */
-   String SERVER_ADDRESS = "pi.oswego.edu";
+   byte[] SERVER_ADDRESS = { -127, 3, 20, 26 };
 
    /**
     * Maximum size of a packet sent by any node
     */
-   int MAX_PACKET_SIZE = 1500;
+   int MAX_PACKET_SIZE = 5000;
 
    /**
     * Interval for sending heartbeats to clients
@@ -63,6 +63,4 @@ public interface TexasHoldemConstants {
     * Game in progress
     */
    int GAME_MODE = 2;
-
-
 }

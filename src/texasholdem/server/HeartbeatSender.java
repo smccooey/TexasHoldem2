@@ -55,7 +55,7 @@ class HeartbeatSender extends Thread implements TexasHoldemConstants {
       catch(IOException ioe) {
          ioe.printStackTrace();
       }
-      DatagramPacket hbPacket = new DatagramPacket(hbBytes, hbBytes.length, group);;
+      DatagramPacket hbPacket = new DatagramPacket(hbBytes, hbBytes.length, group);
       while(!cancel) {
          try {
             socket.send(hbPacket);

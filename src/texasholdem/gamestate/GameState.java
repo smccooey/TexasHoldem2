@@ -110,7 +110,10 @@ public class GameState implements Serializable, TexasHoldemConstants {
 
    @Override
    public String toString() {
-      return "GameState{" + "currentPlayer=" + currentPlayer + ", players=" + players.size() + ", tableCards=" + tableCards.size() + ", pot=" + pot + ", numberOfturnsLeft=" + numberOfturnsLeft + '}';
+      return "GameState{" + "currentPlayer=" + (currentPlayer == null ? null : currentPlayer) +
+            ", players=" + players.size() + ", tableCards=" +
+            (tableCards == null ? null : tableCards.size()) + ", pot=" + pot +
+            ", numberOfturnsLeft=" + numberOfturnsLeft + '}';
    }
 
    /**
