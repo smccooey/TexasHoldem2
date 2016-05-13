@@ -19,8 +19,9 @@ public class Player implements Serializable {
     private int raiseAmount;
     private int amountOnTable;
 
-    public boolean[] play; // 0- check, 1-raise, 2- fold 3- call 
+    public boolean[] play; // 0- check, 1-raise, 2- fold 3- call
     private int turnOutCome;
+    public boolean fold;
 
    /**
     * The player's unique id
@@ -49,7 +50,7 @@ public class Player implements Serializable {
         showState();
         turnOutCome = -1;
         if (!callMode) {
-            System.out.println("CHECK 0, FOLD 1,RAISE 2");
+            System.out.println("CHECK 0, FOLD 1, RAISE 2");
             turnOutCome = sc.nextInt();
             if (turnOutCome == 2) {
                 boolean validPlay = false;
@@ -72,9 +73,10 @@ public class Player implements Serializable {
             }
         }
         else {
-            System.out.println("CALL 0, FOLD 1,RAISE 2");
+            System.out.println("CALL 0, FOLD 1, RAISE 2");
             System.out.println("BET TO PAY: $" + (raiseAmount - amountOnTable));
             turnOutCome = sc.nextInt();
+            fold = turnOutCome == 1;
             if (turnOutCome == 2) {
                 boolean validPlay = false;
                 while (!validPlay) {

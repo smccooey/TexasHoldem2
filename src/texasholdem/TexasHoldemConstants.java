@@ -63,4 +63,9 @@ public interface TexasHoldemConstants {
     * Game in progress
     */
    int GAME_MODE = 2;
+
+   /**
+    * Game has ended
+    */
+   int GAME_OVER = 3;
 }

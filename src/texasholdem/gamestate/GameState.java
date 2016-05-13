@@ -25,6 +25,7 @@ public class GameState implements Serializable, TexasHoldemConstants {
    private int handsDealt = 0;
    private String message;
    private int mode; // what mode is the server in
+   public volatile boolean readyToSend;
 
    /**
     * Unique id of the host sending the gamestate

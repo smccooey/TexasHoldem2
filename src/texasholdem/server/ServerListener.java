@@ -119,5 +119,15 @@ class ServerListener extends Thread implements TexasHoldemConstants {
       if(future != null) {
          future.cancel(true);
       }
+      if(heartbeatTimeouts.size() == 0) {
+         // All players are gone. Quit
+         System.out.println("All players have been dropped; exiting.");
+         System.exit(0);
+      }
+      if(heartbeatTimeouts.size() == 1) {
+         // All players are gone. Quit
+         System.out.println("Only one player remaining. Game will end.");
+         System.exit(0);
+      }
    }
 }

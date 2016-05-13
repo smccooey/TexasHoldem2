@@ -140,9 +140,9 @@ public class GameServer implements TexasHoldemConstants {
    private void doStuff() {
       while(!cancel) {
          if(!received.isEmpty()) {
-            System.err.println("Polling received object queue.\n");
+            // System.err.println("Polling received-object queue.\n");
             Object obj = received.poll();
-            System.err.println("While loop handling " + obj + "\n");
+            // System.err.println("While loop handling " + obj + "\n");
             if(obj != null) {
                if(obj instanceof Player) {
                   Player newPlayer = (Player)obj;
@@ -160,7 +160,7 @@ public class GameServer implements TexasHoldemConstants {
                            gameState.setMode(GAME_MODE);
                            gameState.setStartGame(true);
                            if(runner == null) {
-                              System.err.println("Starting game runner (game full).\n");
+                              // System.err.println("Starting game runner (game full).\n");
                               runner = new ServerGameRunner(gameState, this);
                               runner.start();
                            }
@@ -192,7 +192,7 @@ public class GameServer implements TexasHoldemConstants {
                      if(gameState.getPlayers().size() > 1 && gameState.getStartGame()) {
                         gameState.setMode(GAME_MODE);
                         if(runner == null) {
-                           System.err.println("Starting game runner (server changing game mode).\n");
+                           // System.err.println("Starting game runner (server changing game mode).\n");
                            runner = new ServerGameRunner(gameState, this);
                            runner.start();
                         }
@@ -203,40 +203,43 @@ public class GameServer implements TexasHoldemConstants {
                   }
                   else if(gameState.getMode() == GAME_MODE) {
                      // Gamestate received from current player
-                     System.err.println("Runner: " + runner + "\n");
+                     // System.err.println("Runner: " + runner + "\n");
                      if(runner == null) {
-                        System.err.println("Starting game runner (client changed game mode).\n");
+                        // System.err.println("Starting game runner (client changed game mode).\n");
                         runner = new ServerGameRunner(gameState, this);
                         runner.start();
                      }
                      else {
                         if(gameState.getCurrentPlayer().equals(sendingPlayer)) {
-                           System.err.println("Received gamestate from current player.");
+                           // System.err.println("Received gamestate from current player.");
+                           //gameState.readyToSend = false;
                            runner.setGameState(gameState);
+                           // while(gameState.readyToSend) {
+                              synchronized(this) {
+                                 try {
+                                    wait();
+                                 }
+                                 catch(InterruptedException ie) {
+
+                                 }
+                              }
+                              // multicastGameState();
+                           // }
                         }
                         else {
-                           System.err.println("Received gamestate from noncurrent player.");
+                           // System.err.println("Received gamestate from noncurrent player.");
                         }
                      }
-                     synchronized(this) {
-                        try {
-                           wait();
-                        }
-                        catch(InterruptedException ie) {
-
-                        }
-                     }
-                     multicastGameState();
                   }
                }
                else if(obj instanceof Ack) {
                   Ack ack = (Ack)obj;
-                  System.err.println("Server handling " + ack + "\n");
+                  // System.err.println("Server handling " + ack + "\n");
                   if(ack.getSequenceNumber() == gameState.getSequenceNumber()) {
                      // This is an ack for the current gamestate
                      ScheduledFuture<?> future = ackTimeouts.remove(ack.getSender());
                      if(future != null) {
-                        System.err.println("Canceling future.\n");
+                        // System.err.println("Canceling future.\n");
                         future.cancel(true);
                      }
                   }
@@ -252,7 +255,7 @@ public class GameServer implements TexasHoldemConstants {
       synchronized(this) {
          try {
             if(received.isEmpty()) {
-               System.out.println("waiting ***********************");
+               // System.err.println("waiting ***********************");
                wait();
             }
          }
@@ -276,6 +279,17 @@ public class GameServer implements TexasHoldemConstants {
 
       // Tell the listener to stop expecting heartbeats
       listener.dropPlayer(id);
+      listener.dropPlayer(id);
+      for(Player p: gameState.getPlayers()) {
+         if(p.getId() == id) {
+            gameState.getPlayers().remove(p);
+            break;
+         }
+      }
+      if(gameState.getPlayers().isEmpty()) {
+         // No players left; exit
+         cancel();
+      }
    }
 
    /**
@@ -284,7 +298,7 @@ public class GameServer implements TexasHoldemConstants {
     * @param obj The object received
     */
    void receiveObject(Object obj) {
-      System.err.println(obj + " added to queue.\n");
+      // System.err.println(obj + " added to queue.\n");
       received.add(obj);
       synchronized(this) {
          notifyAll();
@@ -316,7 +330,7 @@ public class GameServer implements TexasHoldemConstants {
    private void multicastGameState() {
       gameState.incrementSequenceNumber();
       gameState.setSender(id);
-      System.err.println("Multicasting " + gameState + "\n");
+      // System.err.println("Multicasting " + gameState + "\n");
       byte[] stateBytes = new byte[0];
       try {
          stateBytes = SharedUtilities.toByteArray(gameState);
@@ -354,8 +368,8 @@ public class GameServer implements TexasHoldemConstants {
       byte[] bytes = new byte[0];
       try {
          bytes = SharedUtilities.toByteArray(ser);
-         System.err.println("Server sending " + ser + " to " + player.getUsername() + "@" +
-               player.getAddress() + "; " + bytes.length + ".\n");
+         // System.err.println("Server sending " + ser + " to " + player.getUsername() + "@" +
+               // player.getAddress() + "; " + bytes.length + ".\n");
       }
       catch(IOException ioe) {
          ioe.printStackTrace();

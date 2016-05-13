@@ -8,13 +8,14 @@ package texasholdem.server;
 import java.util.Scanner;
 import texasholdem.gamestate.GameState;
 import texasholdem.gamestate.Player;
+import texasholdem.TexasHoldemConstants;
 
 /**
  * This class handles networking required for game, and starting and finishing a game.
  *
  * @author al3x901
  */
-public class ServerGameRunner extends Thread {
+public class ServerGameRunner extends Thread implements TexasHoldemConstants {
 
    private ServerGameLogic game;
    private volatile GameState gameState;
@@ -43,7 +44,7 @@ public class ServerGameRunner extends Thread {
          System.out.println("");
          int nextPlayer = -1;
          gameState.setNumberOfturnsLeft(gameState.getPlayers().size());
-         System.out.println("BEFORE WHILE LOOP ******");
+         System.err.println("BEFORE WHILE LOOP ******");
          while (gameState.getNumberOfturnsLeft() > 0) {
             //TODO: Make players call if raised.
             nextPlayer++;
@@ -62,14 +63,14 @@ public class ServerGameRunner extends Thread {
                }
             }
 
-            System.out.println("***********GAME STATE IN SERVERGAME RUNNER AFTER WAIT*************");
-            System.out.println(gameState.toString());
-            System.out.println("***********GAME STATE IN SERVERGAME RUNNER AFTER WAIT*************");
+            System.err.println("***********GAME STATE IN SERVERGAME RUNNER AFTER WAIT*************");
+            System.err.println(gameState.toString());
+            System.err.println("***********GAME STATE IN SERVERGAME RUNNER AFTER WAIT*************");
 
             /*Happens in client*/
             /*Server waits, and gest GS back updates currentPlayer and reacts, */
             // 0 fold , 1 game is finished, 2 player just raised
-            switch (react(currentPlayer.getTurnOutCome(), currentPlayer)) {
+            switch (react(gameState.getCurrentPlayer().getTurnOutCome(), currentPlayer)) {
                case 0:
                   nextPlayer--;
                   break;
@@ -97,17 +98,17 @@ public class ServerGameRunner extends Thread {
          resetMoneyOnTable();
          switch (gameState.getHandsDealt()) {
             case 1:
-               System.out.println("FLOP");
+               // System.err.println("FLOP");
                game.callFlop();
                updateGameStateObject();
                break;
             case 2:
-               System.out.println("turn");
+               // System.err.println("turn");
                game.betTurn();
                updateGameStateObject();
                break;
             case 3:
-               System.out.println("river");
+               // System.err.println("river");
                game.betRiver();
                updateGameStateObject();
                break;
@@ -115,6 +116,9 @@ public class ServerGameRunner extends Thread {
                break;
          }
       }
+      gameState.setMessage("WINNER: " + game.getWinner().get(0).getUsername());
+      gameState.setMode(GAME_OVER);
+      gameServer.multicastGameState(gameState);
    }
 
    //CHECK 0, FOLD 1,RAISE 2, CALL 3

@@ -18,14 +18,11 @@ import java.net.SocketAddress;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -112,15 +109,24 @@ public class GameClient implements ClientState, TexasHoldemConstants {
 
    public volatile boolean gameStateUpdated;
 
+   // private int port;
+
+   private InetAddress groupAddress;
+
    /**
     * Constructs a client in the Texas Hold 'em game.
     */
    public GameClient() {
       in = new Scanner(System.in);
       System.out.print("Enter your name: ");
-      // name = in.nextLine();
-      name = "name" + Math.random();
-      InetAddress groupAddress = null, serverAddress = null;
+      name = in.nextLine();
+/*
+      System.out.print("Enter your port number: ");
+      port = Integer.parseInt(in.nextLine());
+*/
+      // name = "name" + Math.random();
+      groupAddress = null;
+      InetAddress serverAddress = null;
       try {
          groupAddress = InetAddress.getByAddress(MULTICAST_ADDRESS);
          serverAddress = InetAddress.getByAddress(SERVER_ADDRESS);
@@ -180,16 +186,16 @@ public class GameClient implements ClientState, TexasHoldemConstants {
 
       while(!cancel) {
          if(!received.isEmpty()) {
-            System.err.println("Polling received-object queue.");
+            // System.err.println("Polling received-object queue.");
             Object obj = received.poll();
-            System.err.println("Client received " + obj + " while in " + state + ".\n");
+            // System.err.println("Client received " + obj + " while in " + state + ".\n");
             if(obj != null) {
                // The new gamestate SHOULD contain this client's player,
                // confirming that the player has joined the game.
                if(state == JOINING) {
-                  System.err.println("Client state JOINING.\n");
+                  // System.err.println("Client state JOINING.\n");
                   if(obj instanceof GameState) {
-                     System.err.println("Client received GameState " + obj + "\n");
+                     // System.err.println("Client received GameState " + obj + "\n");
                      GameState newGameState = (GameState)obj;
                      // First acknowledge receipt
                      send(new Ack(newGameState.getSequenceNumber(), getId()));
@@ -213,7 +219,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
                      }
                   }
                   else if(obj instanceof Rejection) {
-                     System.err.println("Client received Rejection " + obj + "\n");
+                     // System.err.println("Client received Rejection " + obj + "\n");
                      Rejection rejection = (Rejection)obj;
                      assert rejection.getId() == getId();
                      System.out.println("Could not join game.\n" + rejection.getMessage());
@@ -226,13 +232,13 @@ public class GameClient implements ClientState, TexasHoldemConstants {
                else if(state == JOINED) {
                   // Player is waiting for game to start
                   if(obj instanceof StartRequest) {
-                     System.err.println("Handling startrequest.\n");
+                     // System.err.println("Handling startrequest.\n");
                      gameState.setMode(GAME_MODE);
                      state = IN_GAME;
                      send(gameState);
                   }
                   else if(obj instanceof GameState) {
-                     System.err.println("Client received GameState " + obj + "\n");
+                     // System.err.println("Client received GameState " + obj + "\n");
                      GameState newGameState = (GameState)obj;
                      send(new Ack(newGameState.getSequenceNumber(), getId()));
                      if(newGameState.getSequenceNumber() > gameState.getSequenceNumber()) {
@@ -267,14 +273,21 @@ public class GameClient implements ClientState, TexasHoldemConstants {
                }
                else if(state == IN_GAME) {
                   if(obj instanceof GameState) {
-                     System.err.println("Client received GameState " + obj + "\n");
+                     // System.err.println("Client received GameState " + obj + "\n");
                      GameState newGameState = (GameState)obj;
                      send(new Ack(newGameState.getSequenceNumber(), getId()));
                      if(newGameState.getSequenceNumber() > gameState.getSequenceNumber()) {
                         int i = newGameState.getPlayers().indexOf(player);
                         player = newGameState.getPlayers().get(i);
                         gameState = newGameState;
-                        takeTurn();
+                        if(gameState.getMode() == GAME_MODE) {
+                           takeTurn();
+                        }
+                        else if(gameState.getMode() == GAME_OVER) {
+                           System.out.println("Game over.\n" + gameState.getMessage());
+                           state = IDLE;
+                           System.exit(0);
+                        }
                      }
                   }
                   else if(obj instanceof Ack) {
@@ -306,10 +319,8 @@ public class GameClient implements ClientState, TexasHoldemConstants {
             gameState.getPlayers().set(index, player);
          }
 
-
          ExecutorService ex = Executors.newSingleThreadExecutor();
          Future<?> turnTaker = ex.submit(() -> player.takeTurn(in));
-
 
          new Thread(() -> {
             try {
@@ -321,8 +332,14 @@ public class GameClient implements ClientState, TexasHoldemConstants {
             catch(ExecutionException e) {
                e.printStackTrace();
             }
-            System.out.println("SENDING GAME STATE");
+            // System.err.println("SENDING GAME STATE");
+            player = gameState.getPlayers().get(index);
             send(gameState);
+            if(player.fold) {
+               System.out.println("Folding.");
+               cancel();
+               System.exit(0);
+            }
          }).start();
       }
       else {
@@ -338,7 +355,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
       if(obj == null) {
          throw new NullPointerException("Null received by GameClient#receiveObject.");
       }
-      System.err.println(obj + " added to queue.\n");
+      // System.err.println(obj + " added to queue.\n");
       received.add(obj);
       // Wake up the client if it is napping.
       synchronized(this) {
@@ -361,6 +378,11 @@ public class GameClient implements ClientState, TexasHoldemConstants {
       listener.cancel();
       scheduler.shutdown();
       cancel = true;
+      if(consoleListener != null) {
+         consoleListener.cancel();
+      }
+      System.out.println("Disconnected from server; exiting.");
+      System.exit(1);
       synchronized(this) {
          notifyAll();
       }
@@ -371,7 +393,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
     */
    private void joinGame() {
       for(int i = 0; i < 5; i++) {
-         System.err.println("Attempt #" + (i + 1) + " to join game.\n");
+         // System.err.println("Attempt #" + (i + 1) + " to join game.\n");
          send(player);
          try {
             Thread.sleep(DROP_TIMEOUT * 2);
@@ -401,7 +423,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
     * intervals.
     */
    void drop() {
-      // ????
+      cancel();
    }
 
    /**
@@ -419,7 +441,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
       }
       try {
          byte[] bytes = SharedUtilities.toByteArray(ser);
-         System.err.println("Client sending " + ser + "\n");
+         // System.err.println("Client sending " + ser + "\n");
          socket.send(new DatagramPacket(bytes, bytes.length, server));
       }
       catch(IOException ioe) {
@@ -428,7 +450,7 @@ public class GameClient implements ClientState, TexasHoldemConstants {
    }
 
    void handleAck(Ack ack) {
-      System.err.println("Client received Ack " + ack + "\n");
+      // System.err.println("Client received Ack " + ack + "\n");
       if(ackFuture != null) {
          ackFuture.cancel(true);
       }
